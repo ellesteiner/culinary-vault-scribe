@@ -17,6 +17,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { useRecipe } from '@/hooks/useRecipe';
 import { RecipeModal } from '@/components/recipe/RecipeModal';
+import { RecipeComments } from '@/components/recipe/RecipeComments';
 
 export default function RecipeDetail() {
   const { id } = useParams<{ id: string }>();
@@ -306,6 +307,9 @@ export default function RecipeDetail() {
                   <p className="text-muted-foreground whitespace-pre-wrap">{recipe.notes}</p>
                 </div>
               )}
+
+              {/* Comments */}
+              <RecipeComments recipeId={recipe.id} />
             </div>
           </div>
         </motion.div>
