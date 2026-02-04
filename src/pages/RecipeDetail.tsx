@@ -98,10 +98,10 @@ export default function RecipeDetail() {
         {/* Navigation Bar */}
         <div className="absolute top-4 left-4 right-4 flex justify-between items-center">
           <Button
-            variant="secondary"
+            variant="outline"
             size="sm"
             onClick={() => navigate('/')}
-            className="bg-background/90 backdrop-blur-sm hover:bg-background"
+            className="bg-white/95 backdrop-blur-sm hover:bg-white text-foreground border-border shadow-sm"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
@@ -110,10 +110,10 @@ export default function RecipeDetail() {
           <div className="flex gap-2">
             {recipe.source_url && (
               <Button
-                variant="secondary"
+                variant="outline"
                 size="sm"
                 asChild
-                className="bg-background/90 backdrop-blur-sm hover:bg-background"
+                className="bg-white/95 backdrop-blur-sm hover:bg-white text-foreground border-border shadow-sm"
               >
                 <a href={recipe.source_url} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="w-4 h-4 mr-2" />
@@ -122,10 +122,10 @@ export default function RecipeDetail() {
               </Button>
             )}
             <Button
-              variant="secondary"
+              variant="outline"
               size="sm"
               onClick={() => setIsEditModalOpen(true)}
-              className="bg-background/90 backdrop-blur-sm hover:bg-background"
+              className="bg-white/95 backdrop-blur-sm hover:bg-white text-foreground border-border shadow-sm"
             >
               <Edit3 className="w-4 h-4 mr-2" />
               Edit
