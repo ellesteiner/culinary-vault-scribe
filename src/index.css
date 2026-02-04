@@ -1,96 +1,121 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Warm cookbook palette */
+    --background: 40 30% 97%;
+    --foreground: 30 10% 15%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 40 40% 99%;
+    --card-foreground: 30 10% 15%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 40 40% 99%;
+    --popover-foreground: 30 10% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Burgundy/Wine primary */
+    --primary: 350 65% 35%;
+    --primary-foreground: 40 30% 97%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Sage green secondary */
+    --secondary: 140 20% 45%;
+    --secondary-foreground: 40 30% 97%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Warm cream muted */
+    --muted: 40 25% 92%;
+    --muted-foreground: 30 10% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Golden amber accent */
+    --accent: 38 85% 55%;
+    --accent-foreground: 30 10% 15%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 40 30% 97%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 35 25% 88%;
+    --input: 35 25% 88%;
+    --ring: 350 65% 35%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
+    /* Custom cookbook colors */
+    --cream: 40 40% 96%;
+    --warm-white: 40 50% 99%;
+    --burgundy: 350 65% 35%;
+    --burgundy-light: 350 55% 45%;
+    --burgundy-dark: 350 70% 25%;
+    --sage: 140 20% 45%;
+    --sage-light: 140 15% 75%;
+    --olive: 80 25% 40%;
+    --amber: 38 85% 55%;
+    --amber-light: 40 80% 75%;
+    --terracotta: 20 55% 50%;
+    --paper: 40 30% 94%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar (keeping defaults) */
+    --sidebar-background: 40 30% 97%;
+    --sidebar-foreground: 30 10% 25%;
+    --sidebar-primary: 350 65% 35%;
+    --sidebar-primary-foreground: 40 30% 97%;
+    --sidebar-accent: 140 20% 45%;
+    --sidebar-accent-foreground: 40 30% 97%;
+    --sidebar-border: 35 25% 88%;
+    --sidebar-ring: 350 65% 35%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 30 15% 10%;
+    --foreground: 40 30% 92%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 30 15% 14%;
+    --card-foreground: 40 30% 92%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 30 15% 14%;
+    --popover-foreground: 40 30% 92%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 350 55% 50%;
+    --primary-foreground: 40 30% 97%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 140 18% 35%;
+    --secondary-foreground: 40 30% 92%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 30 12% 20%;
+    --muted-foreground: 40 20% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 38 75% 50%;
+    --accent-foreground: 30 15% 10%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 40 30% 97%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 30 12% 22%;
+    --input: 30 12% 22%;
+    --ring: 350 55% 50%;
+
+    --cream: 30 15% 12%;
+    --warm-white: 30 15% 16%;
+    --burgundy: 350 55% 50%;
+    --burgundy-light: 350 50% 60%;
+    --burgundy-dark: 350 60% 35%;
+    --sage: 140 18% 40%;
+    --sage-light: 140 15% 25%;
+    --olive: 80 20% 35%;
+    --amber: 38 75% 50%;
+    --amber-light: 40 60% 35%;
+    --terracotta: 20 45% 45%;
+    --paper: 30 15% 14%;
+
+    --sidebar-background: 30 15% 10%;
+    --sidebar-foreground: 40 30% 92%;
+    --sidebar-primary: 350 55% 50%;
+    --sidebar-primary-foreground: 40 30% 97%;
+    --sidebar-accent: 140 18% 35%;
+    --sidebar-accent-foreground: 40 30% 92%;
+    --sidebar-border: 30 12% 22%;
+    --sidebar-ring: 350 55% 50%;
   }
 }
 
@@ -100,6 +125,93 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
+}
+
+@layer components {
+  .recipe-card {
+    @apply relative overflow-hidden rounded-xl bg-card shadow-md transition-all duration-300;
+    @apply hover:shadow-xl hover:-translate-y-1;
+  }
+
+  .recipe-card-image {
+    @apply aspect-[4/3] w-full object-cover;
+  }
+
+  .recipe-tag {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+    background-color: hsl(var(--sage) / 0.15);
+    color: hsl(var(--sage));
+    border: 1px solid hsl(var(--sage) / 0.2);
+  }
+
+  .recipe-tag-burgundy {
+    background-color: hsl(var(--burgundy) / 0.1);
+    color: hsl(var(--burgundy));
+    border-color: hsl(var(--burgundy) / 0.2);
+  }
+
+  .recipe-tag-amber {
+    background-color: hsl(var(--amber) / 0.15);
+    color: hsl(var(--accent-foreground));
+    border-color: hsl(var(--amber) / 0.25);
+  }
+
+  .btn-cookbook {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium;
+    @apply bg-primary text-primary-foreground shadow-md;
+    @apply transition-all duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+  }
+
+  .btn-cookbook:hover {
+    background-color: hsl(var(--burgundy-light));
+  }
+
+  .btn-cookbook-outline {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium;
+    @apply bg-transparent text-primary border-2 border-primary;
+    @apply hover:bg-primary hover:text-primary-foreground transition-all duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+  }
+
+  .input-cookbook {
+    @apply w-full px-4 py-3 rounded-lg border border-border;
+    background-color: hsl(var(--warm-white));
+    @apply text-foreground placeholder:text-muted-foreground;
+    @apply focus:outline-none focus:border-primary;
+    @apply transition-all duration-200;
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.3);
+  }
+
+  .input-cookbook:focus {
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
+  }
+
+  .paper-texture {
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  }
+
+  .gradient-cookbook {
+    background: linear-gradient(135deg, hsl(var(--cream)) 0%, hsl(var(--warm-white)) 50%, hsl(var(--paper)) 100%);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .font-serif {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+
+  .font-sans {
+    font-family: 'Inter', system-ui, sans-serif;
   }
 }
