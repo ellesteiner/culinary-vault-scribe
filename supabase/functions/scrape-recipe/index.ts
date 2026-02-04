@@ -161,6 +161,7 @@ function parseRecipeFromHTML(html: string): ScrapedRecipe {
   const jsonLdMatches = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi);
   
   if (jsonLdMatches) {
+    console.log(`Found ${jsonLdMatches.length} JSON-LD blocks`);
     for (const match of jsonLdMatches) {
       try {
         const jsonContent = match.replace(/<script[^>]*>|<\/script>/gi, '').trim();
@@ -168,9 +169,11 @@ function parseRecipeFromHTML(html: string): ScrapedRecipe {
         
         // Handle @graph structure
         const recipes = findRecipeSchema(data);
+        console.log(`Found ${recipes.length} recipe schemas`);
         
         if (recipes.length > 0) {
           const recipeData = recipes[0];
+          console.log('Recipe data keys:', Object.keys(recipeData));
           
           recipe.title = recipeData.name || null;
           recipe.image = extractImage(recipeData.image);
@@ -180,12 +183,49 @@ function parseRecipeFromHTML(html: string): ScrapedRecipe {
           recipe.cookTime = formatDuration(recipeData.cookTime || recipeData.totalTime);
           recipe.servings = extractServings(recipeData.recipeYield);
           
-          break;
+          // If we got good data, stop looking
+          if (recipe.ingredients.length > 0 || recipe.instructions.length > 0) {
+            break;
+          }
         }
       } catch (e) {
         console.log('Failed to parse JSON-LD block:', e);
         continue;
       }
+    }
+  }
+
+  // Fallback: Try WPRM (WordPress Recipe Maker) format - very common
+  if (recipe.ingredients.length === 0) {
+    const wprmIngredients = extractWPRMIngredients(html);
+    if (wprmIngredients.length > 0) {
+      recipe.ingredients = wprmIngredients;
+      console.log('Extracted ingredients from WPRM format');
+    }
+  }
+
+  if (recipe.instructions.length === 0) {
+    const wprmInstructions = extractWPRMInstructions(html);
+    if (wprmInstructions.length > 0) {
+      recipe.instructions = wprmInstructions;
+      console.log('Extracted instructions from WPRM format');
+    }
+  }
+
+  // Fallback: Try common recipe card HTML patterns
+  if (recipe.ingredients.length === 0) {
+    const htmlIngredients = extractIngredientsFromHTML(html);
+    if (htmlIngredients.length > 0) {
+      recipe.ingredients = htmlIngredients;
+      console.log('Extracted ingredients from HTML');
+    }
+  }
+
+  if (recipe.instructions.length === 0) {
+    const htmlInstructions = extractInstructionsFromHTML(html);
+    if (htmlInstructions.length > 0) {
+      recipe.instructions = htmlInstructions;
+      console.log('Extracted instructions from HTML');
     }
   }
 
@@ -206,6 +246,109 @@ function parseRecipeFromHTML(html: string): ScrapedRecipe {
   }
 
   return recipe;
+}
+
+// Extract ingredients from WordPress Recipe Maker (WPRM) format
+function extractWPRMIngredients(html: string): string[] {
+  const ingredients: string[] = [];
+  
+  // WPRM uses class="wprm-recipe-ingredient"
+  const ingredientMatches = html.matchAll(/<li[^>]*class="[^"]*wprm-recipe-ingredient[^"]*"[^>]*>([\s\S]*?)<\/li>/gi);
+  for (const match of ingredientMatches) {
+    const text = stripHTML(match[1]).trim();
+    if (text) ingredients.push(decodeHTMLEntities(text));
+  }
+  
+  return ingredients;
+}
+
+// Extract instructions from WPRM format
+function extractWPRMInstructions(html: string): string[] {
+  const instructions: string[] = [];
+  
+  // WPRM uses class="wprm-recipe-instruction"
+  const instructionMatches = html.matchAll(/<li[^>]*class="[^"]*wprm-recipe-instruction[^"]*"[^>]*>([\s\S]*?)<\/li>/gi);
+  for (const match of instructionMatches) {
+    // Get text from instruction-text span if present
+    const textMatch = match[1].match(/<span[^>]*class="[^"]*wprm-recipe-instruction-text[^"]*"[^>]*>([\s\S]*?)<\/span>/i);
+    const text = textMatch ? stripHTML(textMatch[1]).trim() : stripHTML(match[1]).trim();
+    if (text) instructions.push(decodeHTMLEntities(text));
+  }
+  
+  return instructions;
+}
+
+// Extract ingredients from common HTML patterns
+function extractIngredientsFromHTML(html: string): string[] {
+  const ingredients: string[] = [];
+  
+  // Look for common ingredient container patterns
+  const containerPatterns = [
+    /<div[^>]*class="[^"]*ingredients?[^"]*"[^>]*>([\s\S]*?)<\/div>/gi,
+    /<ul[^>]*class="[^"]*ingredients?[^"]*"[^>]*>([\s\S]*?)<\/ul>/gi,
+    /<section[^>]*class="[^"]*ingredients?[^"]*"[^>]*>([\s\S]*?)<\/section>/gi,
+  ];
+  
+  for (const pattern of containerPatterns) {
+    const matches = html.matchAll(pattern);
+    for (const match of matches) {
+      // Extract list items from container
+      const liMatches = match[1].matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi);
+      for (const li of liMatches) {
+        const text = stripHTML(li[1]).trim();
+        if (text && text.length > 2 && text.length < 500) {
+          ingredients.push(decodeHTMLEntities(text));
+        }
+      }
+      if (ingredients.length > 0) break;
+    }
+    if (ingredients.length > 0) break;
+  }
+  
+  return ingredients;
+}
+
+// Extract instructions from common HTML patterns
+function extractInstructionsFromHTML(html: string): string[] {
+  const instructions: string[] = [];
+  
+  // Look for common instruction container patterns
+  const containerPatterns = [
+    /<div[^>]*class="[^"]*instructions?[^"]*"[^>]*>([\s\S]*?)<\/div>/gi,
+    /<div[^>]*class="[^"]*directions?[^"]*"[^>]*>([\s\S]*?)<\/div>/gi,
+    /<div[^>]*class="[^"]*steps?[^"]*"[^>]*>([\s\S]*?)<\/div>/gi,
+    /<ol[^>]*class="[^"]*instructions?[^"]*"[^>]*>([\s\S]*?)<\/ol>/gi,
+  ];
+  
+  for (const pattern of containerPatterns) {
+    const matches = html.matchAll(pattern);
+    for (const match of matches) {
+      // Extract list items or paragraphs
+      const liMatches = match[1].matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi);
+      for (const li of liMatches) {
+        const text = stripHTML(li[1]).trim();
+        if (text && text.length > 5 && text.length < 2000) {
+          instructions.push(decodeHTMLEntities(text));
+        }
+      }
+      
+      // Also try paragraphs if no list items
+      if (instructions.length === 0) {
+        const pMatches = match[1].matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi);
+        for (const p of pMatches) {
+          const text = stripHTML(p[1]).trim();
+          if (text && text.length > 10 && text.length < 2000) {
+            instructions.push(decodeHTMLEntities(text));
+          }
+        }
+      }
+      
+      if (instructions.length > 0) break;
+    }
+    if (instructions.length > 0) break;
+  }
+  
+  return instructions;
 }
 
 function findRecipeSchema(data: any): any[] {
