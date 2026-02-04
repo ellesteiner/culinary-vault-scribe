@@ -1,7 +1,7 @@
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Clock, Users, Edit2, Trash2, ExternalLink } from 'lucide-react';
 import { RecipeWithTags } from '@/types/recipe';
-import { cn } from '@/lib/utils';
 
 interface RecipeCardProps {
   recipe: RecipeWithTags;
@@ -19,7 +19,17 @@ const placeholderImages = [
 ];
 
 export function RecipeCard({ recipe, onEdit, onDelete, index }: RecipeCardProps) {
+  const navigate = useNavigate();
   const imageUrl = recipe.image_url || placeholderImages[index % placeholderImages.length];
+
+  const handleCardClick = () => {
+    navigate(`/recipe/${recipe.id}`);
+  };
+
+  const handleActionClick = (e: React.MouseEvent, action: () => void) => {
+    e.stopPropagation();
+    action();
+  };
 
   return (
     <motion.article
@@ -27,7 +37,8 @@ export function RecipeCard({ recipe, onEdit, onDelete, index }: RecipeCardProps)
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.4, delay: index * 0.05 }}
-      className="recipe-card group"
+      className="recipe-card group cursor-pointer"
+      onClick={handleCardClick}
     >
       {/* Image */}
       <div className="relative overflow-hidden">
@@ -44,14 +55,14 @@ export function RecipeCard({ recipe, onEdit, onDelete, index }: RecipeCardProps)
         {/* Action buttons */}
         <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
           <button
-            onClick={() => onEdit(recipe)}
+            onClick={(e) => handleActionClick(e, () => onEdit(recipe))}
             className="p-2 rounded-full bg-white/90 text-primary shadow-md hover:bg-white hover:scale-110 transition-all duration-200"
             aria-label="Edit recipe"
           >
             <Edit2 className="w-4 h-4" />
           </button>
           <button
-            onClick={() => onDelete(recipe.id)}
+            onClick={(e) => handleActionClick(e, () => onDelete(recipe.id))}
             className="p-2 rounded-full bg-white/90 text-destructive shadow-md hover:bg-white hover:scale-110 transition-all duration-200"
             aria-label="Delete recipe"
           >
@@ -65,6 +76,7 @@ export function RecipeCard({ recipe, onEdit, onDelete, index }: RecipeCardProps)
             href={recipe.source_url}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
             className="absolute bottom-3 right-3 p-2 rounded-full bg-white/90 text-muted-foreground shadow-md hover:bg-white hover:text-primary transition-all duration-200 opacity-0 group-hover:opacity-100"
             aria-label="View original source"
           >
