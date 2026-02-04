@@ -4,7 +4,8 @@ import { Header } from '@/components/recipe/Header';
 import { RecipeGrid } from '@/components/recipe/RecipeGrid';
 import { RecipeModal } from '@/components/recipe/RecipeModal';
 import { DeleteConfirmDialog } from '@/components/recipe/DeleteConfirmDialog';
-import { useRecipes, useDeleteRecipe } from '@/hooks/useRecipes';
+import { TagFilter } from '@/components/recipe/TagFilter';
+import { useRecipes, useDeleteRecipe, useTags } from '@/hooks/useRecipes';
 import { RecipeWithTags } from '@/types/recipe';
 
 const Index = () => {
@@ -12,20 +13,36 @@ const Index = () => {
   const [editingRecipe, setEditingRecipe] = useState<RecipeWithTags | null>(null);
   const [deleteRecipeId, setDeleteRecipeId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
   const { data: recipes = [], isLoading } = useRecipes();
+  const { data: tags = [] } = useTags();
   const deleteRecipe = useDeleteRecipe();
 
   const filteredRecipes = useMemo(() => {
-    if (!searchQuery.trim()) return recipes;
-    
-    const query = searchQuery.toLowerCase();
-    return recipes.filter((recipe) =>
-      recipe.title.toLowerCase().includes(query) ||
-      recipe.ingredients.some((ing) => ing.toLowerCase().includes(query)) ||
-      recipe.tags.some((tag) => tag.name.toLowerCase().includes(query))
-    );
-  }, [recipes, searchQuery]);
+    let result = recipes;
+
+    // Filter by selected tags
+    if (selectedTagIds.length > 0) {
+      result = result.filter((recipe) =>
+        selectedTagIds.some((tagId) =>
+          recipe.tags.some((tag) => tag.id === tagId)
+        )
+      );
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter((recipe) =>
+        recipe.title.toLowerCase().includes(query) ||
+        recipe.ingredients.some((ing) => ing.toLowerCase().includes(query)) ||
+        recipe.tags.some((tag) => tag.name.toLowerCase().includes(query))
+      );
+    }
+
+    return result;
+  }, [recipes, searchQuery, selectedTagIds]);
 
   const handleAddRecipe = () => {
     setEditingRecipe(null);
@@ -60,6 +77,32 @@ const Index = () => {
       />
 
       <main className="container mx-auto px-4 py-8">
+        {/* Tag Filter */}
+        {tags.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <TagFilter
+              tags={tags}
+              selectedTagIds={selectedTagIds}
+              onChange={setSelectedTagIds}
+            />
+          </motion.div>
+        )}
+
+        {/* Results info when filtering */}
+        {(selectedTagIds.length > 0 || searchQuery) && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-sm text-muted-foreground mb-4"
+          >
+            Showing {filteredRecipes.length} of {recipes.length} recipes
+          </motion.p>
+        )}
+
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

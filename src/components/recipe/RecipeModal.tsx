@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Link, Loader2, Sparkles, Clock, Users, ChefHat, Image as ImageIcon } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Link, Loader2, Sparkles, Clock, Users, ChefHat, Image as ImageIcon, X, RefreshCw } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -113,6 +113,10 @@ export function RecipeModal({ isOpen, onClose, recipe }: RecipeModalProps) {
     }
   };
 
+  const clearImage = () => {
+    updateField('image_url', '');
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col p-0">
@@ -125,45 +129,53 @@ export function RecipeModal({ isOpen, onClose, recipe }: RecipeModalProps) {
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-auto">
           <div className="p-6 space-y-6">
-            {/* URL Import Section */}
-            {!isEditing && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-4 rounded-xl bg-gradient-to-r from-primary/5 to-accent/10 border border-primary/10"
-              >
-                <label className="text-sm font-medium text-foreground flex items-center gap-2 mb-3">
-                  <Sparkles className="w-4 h-4 text-accent" />
-                  Import from URL
-                </label>
-                <div className="flex gap-3">
-                  <div className="flex-1 relative">
-                    <Link className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      value={urlInput}
-                      onChange={(e) => setUrlInput(e.target.value)}
-                      placeholder="Paste recipe URL..."
-                      className="pl-10 input-cookbook"
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    onClick={handleScrape}
-                    disabled={!urlInput.trim() || isScraping}
-                    className="btn-cookbook px-6"
-                  >
-                    {isScraping ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Importing...
-                      </>
-                    ) : (
-                      'Import'
-                    )}
-                  </Button>
+            {/* URL Import Section - Always show */}
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-4 rounded-xl bg-gradient-to-r from-primary/5 to-accent/10 border border-primary/10"
+            >
+              <label className="text-sm font-medium text-foreground flex items-center gap-2 mb-3">
+                <Sparkles className="w-4 h-4 text-accent" />
+                {isEditing ? 'Re-import from URL' : 'Import from URL'}
+              </label>
+              <div className="flex gap-3">
+                <div className="flex-1 relative">
+                  <Link className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    placeholder="Paste recipe URL..."
+                    className="pl-10 input-cookbook"
+                  />
                 </div>
-              </motion.div>
-            )}
+                <Button
+                  type="button"
+                  onClick={handleScrape}
+                  disabled={!urlInput.trim() || isScraping}
+                  className="btn-cookbook px-6"
+                >
+                  {isScraping ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Importing...
+                    </>
+                  ) : isEditing ? (
+                    <>
+                      <RefreshCw className="w-4 h-4" />
+                      Re-import
+                    </>
+                  ) : (
+                    'Import'
+                  )}
+                </Button>
+              </div>
+              {isEditing && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Re-import will update the recipe with fresh data from the URL
+                </p>
+              )}
+            </motion.div>
 
             {/* Title */}
             <div>
@@ -179,28 +191,41 @@ export function RecipeModal({ isOpen, onClose, recipe }: RecipeModalProps) {
               />
             </div>
 
-            {/* Image URL */}
+            {/* Image URL with preview and clear */}
             <div>
               <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                 <ImageIcon className="w-4 h-4" />
-                Image URL
+                Recipe Image
               </label>
-              <Input
-                value={formData.image_url}
-                onChange={(e) => updateField('image_url', e.target.value)}
-                placeholder="https://example.com/image.jpg"
-                className="input-cookbook"
-              />
+              <div className="flex gap-3">
+                <Input
+                  value={formData.image_url}
+                  onChange={(e) => updateField('image_url', e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                  className="input-cookbook flex-1"
+                />
+                {formData.image_url && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={clearImage}
+                    className="shrink-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
               {formData.image_url && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="mt-3 relative rounded-lg overflow-hidden w-32 h-24"
+                  className="mt-3 relative rounded-lg overflow-hidden w-full max-w-xs"
                 >
                   <img
                     src={formData.image_url}
                     alt="Recipe preview"
-                    className="w-full h-full object-cover"
+                    className="w-full h-40 object-cover rounded-lg border border-border"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
                     }}
@@ -208,6 +233,22 @@ export function RecipeModal({ isOpen, onClose, recipe }: RecipeModalProps) {
                 </motion.div>
               )}
             </div>
+
+            {/* Source URL (for reference) */}
+            {isEditing && formData.source_url && (
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                  <Link className="w-4 h-4" />
+                  Source URL
+                </label>
+                <Input
+                  value={formData.source_url}
+                  onChange={(e) => updateField('source_url', e.target.value)}
+                  placeholder="Original recipe URL"
+                  className="input-cookbook"
+                />
+              </div>
+            )}
 
             {/* Time and Servings */}
             <div className="grid grid-cols-3 gap-4">
