@@ -135,7 +135,7 @@ export default function RecipeDetail() {
       </div>
 
       {/* Content */}
-      <div className="max-w-5xl mx-auto px-4 -mt-16 relative z-10 pb-12">
+      <div className="max-w-5xl mx-auto px-4 -mt-56 relative z-10 pb-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
