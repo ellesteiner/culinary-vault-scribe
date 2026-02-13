@@ -8,9 +8,11 @@ interface RecipeGridProps {
   onEdit: (recipe: RecipeWithTags) => void;
   onDelete: (id: string) => void;
   isLoading?: boolean;
+  likeCounts?: Record<string, number>;
+  userLikes?: Record<string, boolean>;
 }
 
-export function RecipeGrid({ recipes, onEdit, onDelete, isLoading }: RecipeGridProps) {
+export function RecipeGrid({ recipes, onEdit, onDelete, isLoading, likeCounts = {}, userLikes = {} }: RecipeGridProps) {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -65,6 +67,8 @@ export function RecipeGrid({ recipes, onEdit, onDelete, isLoading }: RecipeGridP
             onEdit={onEdit}
             onDelete={onDelete}
             index={index}
+            likeCount={likeCounts[recipe.id] || 0}
+            isLiked={userLikes[recipe.id] || false}
           />
         ))}
       </AnimatePresence>

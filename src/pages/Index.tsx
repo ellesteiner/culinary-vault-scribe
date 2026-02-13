@@ -7,6 +7,7 @@ import { DeleteConfirmDialog } from '@/components/recipe/DeleteConfirmDialog';
 import { TagFilter } from '@/components/recipe/TagFilter';
 import { OwnerFilter } from '@/components/recipe/OwnerFilter';
 import { useRecipes, useDeleteRecipe, useTags } from '@/hooks/useRecipes';
+import { useLikeCounts, useUserLikes } from '@/hooks/useLikes';
 import { RecipeWithTags } from '@/types/recipe';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -23,6 +24,8 @@ const Index = () => {
   const { user } = useAuth();
   const { data: recipes = [], isLoading } = useRecipes();
   const { data: tags = [] } = useTags();
+  const { data: likeCounts = {} } = useLikeCounts();
+  const { data: userLikes = {} } = useUserLikes();
   const deleteRecipe = useDeleteRecipe();
 
   // Get unique owners
@@ -154,6 +157,8 @@ const Index = () => {
             onEdit={handleEditRecipe}
             onDelete={handleDeleteClick}
             isLoading={isLoading}
+            likeCounts={likeCounts}
+            userLikes={userLikes}
           />
         </motion.div>
       </main>
