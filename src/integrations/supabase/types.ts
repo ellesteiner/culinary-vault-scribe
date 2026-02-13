@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       recipe_comments: {
         Row: {
           content: string
@@ -91,11 +118,13 @@ export type Database = {
           ingredients: Json | null
           instructions: Json | null
           notes: string | null
+          owner_name: string | null
           prep_time: string | null
           servings: string | null
           source_url: string | null
           title: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           cook_time?: string | null
@@ -105,11 +134,13 @@ export type Database = {
           ingredients?: Json | null
           instructions?: Json | null
           notes?: string | null
+          owner_name?: string | null
           prep_time?: string | null
           servings?: string | null
           source_url?: string | null
           title: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           cook_time?: string | null
@@ -119,11 +150,13 @@ export type Database = {
           ingredients?: Json | null
           instructions?: Json | null
           notes?: string | null
+          owner_name?: string | null
           prep_time?: string | null
           servings?: string | null
           source_url?: string | null
           title?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }

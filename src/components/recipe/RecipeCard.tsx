@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Clock, Users, Edit2, Trash2, ExternalLink } from 'lucide-react';
+import { Clock, Users, Edit2, Trash2, ExternalLink, User } from 'lucide-react';
 import { RecipeWithTags } from '@/types/recipe';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface RecipeCardProps {
   recipe: RecipeWithTags;
@@ -20,7 +21,9 @@ const placeholderImages = [
 
 export function RecipeCard({ recipe, onEdit, onDelete, index }: RecipeCardProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const imageUrl = recipe.image_url || placeholderImages[index % placeholderImages.length];
+  const isOwner = user && recipe.user_id === user.id;
 
   const handleCardClick = () => {
     navigate(`/recipe/${recipe.id}`);
@@ -52,23 +55,25 @@ export function RecipeCard({ recipe, onEdit, onDelete, index }: RecipeCardProps)
         {/* Overlay gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         
-        {/* Action buttons */}
-        <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
-          <button
-            onClick={(e) => handleActionClick(e, () => onEdit(recipe))}
-            className="p-2 rounded-full bg-white/90 text-primary shadow-md hover:bg-white hover:scale-110 transition-all duration-200"
-            aria-label="Edit recipe"
-          >
-            <Edit2 className="w-4 h-4" />
-          </button>
-          <button
-            onClick={(e) => handleActionClick(e, () => onDelete(recipe.id))}
-            className="p-2 rounded-full bg-white/90 text-destructive shadow-md hover:bg-white hover:scale-110 transition-all duration-200"
-            aria-label="Delete recipe"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
+        {/* Action buttons - only for owner */}
+        {isOwner && (
+          <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
+            <button
+              onClick={(e) => handleActionClick(e, () => onEdit(recipe))}
+              className="p-2 rounded-full bg-white/90 text-primary shadow-md hover:bg-white hover:scale-110 transition-all duration-200"
+              aria-label="Edit recipe"
+            >
+              <Edit2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => handleActionClick(e, () => onDelete(recipe.id))}
+              className="p-2 rounded-full bg-white/90 text-destructive shadow-md hover:bg-white hover:scale-110 transition-all duration-200"
+              aria-label="Delete recipe"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* Source link */}
         {recipe.source_url && (
@@ -107,6 +112,14 @@ export function RecipeCard({ recipe, onEdit, onDelete, index }: RecipeCardProps)
         <h3 className="font-serif text-xl font-semibold text-foreground mb-3 line-clamp-2 group-hover:text-primary transition-colors duration-200">
           {recipe.title}
         </h3>
+
+        {/* Owner name */}
+        {recipe.owner_name && (
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-2">
+            <User className="w-3.5 h-3.5" />
+            <span>{recipe.owner_name}</span>
+          </div>
+        )}
 
         {/* Meta info */}
         <div className="flex items-center gap-4 text-sm text-muted-foreground">

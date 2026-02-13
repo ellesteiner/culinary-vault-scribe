@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Circle,
   BookOpen,
+  User,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -18,25 +19,26 @@ import { Badge } from '@/components/ui/badge';
 import { useRecipe } from '@/hooks/useRecipe';
 import { RecipeModal } from '@/components/recipe/RecipeModal';
 import { RecipeComments } from '@/components/recipe/RecipeComments';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function RecipeDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: recipe, isLoading, error } = useRecipe(id);
+  const { user } = useAuth();
 
   const [cookMode, setCookMode] = useState(false);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
   const [checkedSteps, setCheckedSteps] = useState<Set<number>>(new Set());
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  const isOwner = user && recipe?.user_id === user.id;
+
   const toggleIngredient = (index: number) => {
     setCheckedIngredients((prev) => {
       const next = new Set(prev);
-      if (next.has(index)) {
-        next.delete(index);
-      } else {
-        next.add(index);
-      }
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
       return next;
     });
   };
@@ -44,11 +46,8 @@ export default function RecipeDetail() {
   const toggleStep = (index: number) => {
     setCheckedSteps((prev) => {
       const next = new Set(prev);
-      if (next.has(index)) {
-        next.delete(index);
-      } else {
-        next.add(index);
-      }
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
       return next;
     });
   };
@@ -85,11 +84,7 @@ export default function RecipeDetail() {
       <div className="relative">
         {recipe.image_url ? (
           <div className="h-64 md:h-80 lg:h-96 relative overflow-hidden">
-            <img
-              src={recipe.image_url}
-              alt={recipe.title}
-              className="w-full h-full object-cover"
-            />
+            <img src={recipe.image_url} alt={recipe.title} className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent" />
           </div>
         ) : (
@@ -122,15 +117,17 @@ export default function RecipeDetail() {
                 </a>
               </Button>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsEditModalOpen(true)}
-              className="bg-white/95 backdrop-blur-sm hover:bg-white text-foreground border-border shadow-sm"
-            >
-              <Edit3 className="w-4 h-4 mr-2" />
-              Edit
-            </Button>
+            {isOwner && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditModalOpen(true)}
+                className="bg-white/95 backdrop-blur-sm hover:bg-white text-foreground border-border shadow-sm"
+              >
+                <Edit3 className="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -147,6 +144,14 @@ export default function RecipeDetail() {
             <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl text-foreground mb-4">
               {recipe.title}
             </h1>
+
+            {/* Owner */}
+            {recipe.owner_name && (
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-4">
+                <User className="w-4 h-4" />
+                <span>by {recipe.owner_name}</span>
+              </div>
+            )}
 
             {/* Meta Info */}
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-4">
