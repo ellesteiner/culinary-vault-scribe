@@ -3,12 +3,15 @@ import { motion } from 'framer-motion';
 import { Clock, Users, Edit2, Trash2, ExternalLink, User } from 'lucide-react';
 import { RecipeWithTags } from '@/types/recipe';
 import { useAuth } from '@/contexts/AuthContext';
+import { LikeButton } from './LikeButton';
 
 interface RecipeCardProps {
   recipe: RecipeWithTags;
   onEdit: (recipe: RecipeWithTags) => void;
   onDelete: (id: string) => void;
   index: number;
+  likeCount?: number;
+  isLiked?: boolean;
 }
 
 const placeholderImages = [
@@ -19,7 +22,7 @@ const placeholderImages = [
   'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&q=80',
 ];
 
-export function RecipeCard({ recipe, onEdit, onDelete, index }: RecipeCardProps) {
+export function RecipeCard({ recipe, onEdit, onDelete, index, likeCount = 0, isLiked = false }: RecipeCardProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const imageUrl = recipe.image_url || placeholderImages[index % placeholderImages.length];
@@ -122,19 +125,22 @@ export function RecipeCard({ recipe, onEdit, onDelete, index }: RecipeCardProps)
         )}
 
         {/* Meta info */}
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          {recipe.cook_time && (
-            <div className="flex items-center gap-1.5">
-              <Clock className="w-4 h-4" />
-              <span>{recipe.cook_time}</span>
-            </div>
-          )}
-          {recipe.servings && (
-            <div className="flex items-center gap-1.5">
-              <Users className="w-4 h-4" />
-              <span>{recipe.servings}</span>
-            </div>
-          )}
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <div className="flex items-center gap-4">
+            {recipe.cook_time && (
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-4 h-4" />
+                <span>{recipe.cook_time}</span>
+              </div>
+            )}
+            {recipe.servings && (
+              <div className="flex items-center gap-1.5">
+                <Users className="w-4 h-4" />
+                <span>{recipe.servings}</span>
+              </div>
+            )}
+          </div>
+          <LikeButton recipeId={recipe.id} likeCount={likeCount} isLiked={isLiked} />
         </div>
 
         {/* Ingredients preview */}

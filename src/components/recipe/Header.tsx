@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, BookOpen, Search, LogIn, User, LogOut, ChevronDown } from 'lucide-react';
+import { Plus, BookOpen, Search, LogIn, User, LogOut, ChevronDown, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -11,6 +12,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthModal } from '@/components/auth/AuthModal';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface HeaderProps {
   onAddRecipe: () => void;
@@ -22,7 +25,22 @@ interface HeaderProps {
 export function Header({ onAddRecipe, searchQuery, onSearchChange, recipeCount }: HeaderProps) {
   const { user, profile, signOut } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const navigate = useNavigate();
 
+  const { data: isAdmin } = useQuery({
+    queryKey: ['is-admin', user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      if (!user) return false;
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+      return !!data;
+    },
+  });
   return (
     <>
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
@@ -85,6 +103,12 @@ export function Header({ onAddRecipe, searchQuery, onSearchChange, recipeCount }
                     <DropdownMenuItem className="text-xs text-muted-foreground" disabled>
                       {user.email}
                     </DropdownMenuItem>
+                    {isAdmin && (
+                      <DropdownMenuItem onClick={() => navigate('/admin')}>
+                        <BarChart3 className="w-4 h-4 mr-2" />
+                        Like Analytics
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => signOut()}>
                       <LogOut className="w-4 h-4 mr-2" />
                       Sign Out
