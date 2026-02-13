@@ -7,7 +7,6 @@ export function useRecipes() {
   return useQuery({
     queryKey: ['recipes'],
     queryFn: async (): Promise<RecipeWithTags[]> => {
-      // Fetch recipes
       const { data: recipes, error: recipesError } = await supabase
         .from('recipes')
         .select('*')
@@ -15,14 +14,12 @@ export function useRecipes() {
 
       if (recipesError) throw recipesError;
 
-      // Fetch recipe_tags with tag info
       const { data: recipeTags, error: tagsError } = await supabase
         .from('recipe_tags')
         .select('recipe_id, tag_id, tags(*)');
 
       if (tagsError) throw tagsError;
 
-      // Map tags to recipes
       const recipesWithTags = (recipes || []).map((recipe) => {
         const associatedTags = (recipeTags || [])
           .filter((rt) => rt.recipe_id === recipe.id)
@@ -61,8 +58,7 @@ export function useCreateRecipe() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: RecipeFormData) => {
-      // Create recipe
+    mutationFn: async ({ data, userId, ownerName }: { data: RecipeFormData; userId: string; ownerName: string }) => {
       const { data: recipe, error: recipeError } = await supabase
         .from('recipes')
         .insert({
@@ -75,13 +71,14 @@ export function useCreateRecipe() {
           cook_time: data.cook_time || null,
           prep_time: data.prep_time || null,
           servings: data.servings || null,
+          user_id: userId,
+          owner_name: ownerName,
         })
         .select()
         .single();
 
       if (recipeError) throw recipeError;
 
-      // Create tag associations
       if (data.tagIds.length > 0) {
         const { error: tagsError } = await supabase
           .from('recipe_tags')
@@ -113,7 +110,6 @@ export function useUpdateRecipe() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: RecipeFormData }) => {
-      // Update recipe
       const { error: recipeError } = await supabase
         .from('recipes')
         .update({
@@ -131,7 +127,6 @@ export function useUpdateRecipe() {
 
       if (recipeError) throw recipeError;
 
-      // Delete existing tag associations
       const { error: deleteError } = await supabase
         .from('recipe_tags')
         .delete()
@@ -139,7 +134,6 @@ export function useUpdateRecipe() {
 
       if (deleteError) throw deleteError;
 
-      // Create new tag associations
       if (data.tagIds.length > 0) {
         const { error: tagsError } = await supabase
           .from('recipe_tags')

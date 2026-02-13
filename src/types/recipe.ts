@@ -11,6 +11,8 @@ export interface Recipe {
   cook_time: string | null;
   prep_time: string | null;
   servings: string | null;
+  user_id: string | null;
+  owner_name: string | null;
 }
 
 export interface Tag {

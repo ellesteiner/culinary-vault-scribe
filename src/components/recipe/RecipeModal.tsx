@@ -9,6 +9,7 @@ import { DynamicList } from './DynamicList';
 import { TagSelector } from './TagSelector';
 import { RecipeFormData, RecipeWithTags, defaultRecipeFormData } from '@/types/recipe';
 import { useCreateRecipe, useUpdateRecipe } from '@/hooks/useRecipes';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -22,6 +23,7 @@ export function RecipeModal({ isOpen, onClose, recipe }: RecipeModalProps) {
   const [formData, setFormData] = useState<RecipeFormData>(defaultRecipeFormData);
   const [urlInput, setUrlInput] = useState('');
   const [isScraping, setIsScraping] = useState(false);
+  const { user, profile } = useAuth();
 
   const createRecipe = useCreateRecipe();
   const updateRecipe = useUpdateRecipe();
@@ -105,7 +107,15 @@ export function RecipeModal({ isOpen, onClose, recipe }: RecipeModalProps) {
       if (isEditing && recipe) {
         await updateRecipe.mutateAsync({ id: recipe.id, data: formData });
       } else {
-        await createRecipe.mutateAsync(formData);
+        if (!user) {
+          toast.error('Please sign in to add a recipe');
+          return;
+        }
+        await createRecipe.mutateAsync({
+          data: formData,
+          userId: user.id,
+          ownerName: profile?.full_name || user.email || 'Unknown',
+        });
       }
       onClose();
     } catch (error) {
@@ -129,7 +139,7 @@ export function RecipeModal({ isOpen, onClose, recipe }: RecipeModalProps) {
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-auto">
           <div className="p-6 space-y-6">
-            {/* URL Import Section - Always show */}
+            {/* URL Import Section */}
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}

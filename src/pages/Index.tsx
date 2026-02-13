@@ -5,8 +5,11 @@ import { RecipeGrid } from '@/components/recipe/RecipeGrid';
 import { RecipeModal } from '@/components/recipe/RecipeModal';
 import { DeleteConfirmDialog } from '@/components/recipe/DeleteConfirmDialog';
 import { TagFilter } from '@/components/recipe/TagFilter';
+import { OwnerFilter } from '@/components/recipe/OwnerFilter';
 import { useRecipes, useDeleteRecipe, useTags } from '@/hooks/useRecipes';
 import { RecipeWithTags } from '@/types/recipe';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 const Index = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -14,13 +17,37 @@ const Index = () => {
   const [deleteRecipeId, setDeleteRecipeId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [ownerFilter, setOwnerFilter] = useState('all');
+  const [ownerNameFilter, setOwnerNameFilter] = useState('all');
 
+  const { user } = useAuth();
   const { data: recipes = [], isLoading } = useRecipes();
   const { data: tags = [] } = useTags();
   const deleteRecipe = useDeleteRecipe();
 
+  // Get unique owners
+  const owners = useMemo(() => {
+    const ownerMap = new Map<string, string>();
+    recipes.forEach((r) => {
+      if (r.user_id && r.owner_name) {
+        ownerMap.set(r.user_id, r.owner_name);
+      }
+    });
+    return Array.from(ownerMap, ([user_id, owner_name]) => ({ user_id, owner_name }));
+  }, [recipes]);
+
   const filteredRecipes = useMemo(() => {
     let result = recipes;
+
+    // Filter by ownership
+    if (ownerFilter === 'mine' && user) {
+      result = result.filter((r) => r.user_id === user.id);
+    }
+
+    // Filter by specific owner
+    if (ownerNameFilter !== 'all') {
+      result = result.filter((r) => r.user_id === ownerNameFilter);
+    }
 
     // Filter by selected tags
     if (selectedTagIds.length > 0) {
@@ -42,9 +69,13 @@ const Index = () => {
     }
 
     return result;
-  }, [recipes, searchQuery, selectedTagIds]);
+  }, [recipes, searchQuery, selectedTagIds, ownerFilter, ownerNameFilter, user]);
 
   const handleAddRecipe = () => {
+    if (!user) {
+      toast.error('Please sign in to add a recipe');
+      return;
+    }
     setEditingRecipe(null);
     setIsModalOpen(true);
   };
@@ -77,23 +108,33 @@ const Index = () => {
       />
 
       <main className="container mx-auto px-4 py-8">
-        {/* Tag Filter */}
-        {tags.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6"
-          >
-            <TagFilter
-              tags={tags}
-              selectedTagIds={selectedTagIds}
-              onChange={setSelectedTagIds}
-            />
-          </motion.div>
-        )}
+        {/* Filters row */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+          {tags.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex-1"
+            >
+              <TagFilter
+                tags={tags}
+                selectedTagIds={selectedTagIds}
+                onChange={setSelectedTagIds}
+              />
+            </motion.div>
+          )}
+
+          <OwnerFilter
+            ownerFilter={ownerFilter}
+            onOwnerFilterChange={setOwnerFilter}
+            ownerNameFilter={ownerNameFilter}
+            onOwnerNameFilterChange={setOwnerNameFilter}
+            owners={owners}
+          />
+        </div>
 
         {/* Results info when filtering */}
-        {(selectedTagIds.length > 0 || searchQuery) && (
+        {(selectedTagIds.length > 0 || searchQuery || ownerFilter !== 'all' || ownerNameFilter !== 'all') && (
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
