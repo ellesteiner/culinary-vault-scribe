@@ -16,14 +16,13 @@ export function useLikeCounts() {
     queryKey: ['like-counts'],
     queryFn: async (): Promise<LikeCounts> => {
       const { data, error } = await supabase
-        .from('recipe_likes')
-        .select('recipe_id');
+        .rpc('get_recipe_like_counts');
 
       if (error) throw error;
 
       const counts: LikeCounts = {};
-      (data || []).forEach((like) => {
-        counts[like.recipe_id] = (counts[like.recipe_id] || 0) + 1;
+      (data || []).forEach((row: { recipe_id: string; like_count: number }) => {
+        counts[row.recipe_id] = row.like_count;
       });
       return counts;
     },
