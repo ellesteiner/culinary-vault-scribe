@@ -126,25 +126,27 @@ export function RecipeComments({ recipeId }: RecipeCommentsProps) {
                       {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                       {comment.updated_at !== comment.created_at && ' (edited)'}
                     </span>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(comment)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(comment.id)}
-                        disabled={deleteComment.isPending}
-                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    {user && comment.user_id === user.id && (
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(comment)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(comment.id)}
+                          disabled={deleteComment.isPending}
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </>
               )}
