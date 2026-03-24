@@ -13,6 +13,7 @@ interface RecipeCommentsProps {
 
 export function RecipeComments({ recipeId }: RecipeCommentsProps) {
   const { data: comments = [], isLoading } = useComments(recipeId);
+  const { user } = useAuth();
   const createComment = useCreateComment();
   const updateComment = useUpdateComment();
   const deleteComment = useDeleteComment();
