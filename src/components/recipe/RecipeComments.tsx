@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useComments, useCreateComment, useUpdateComment, useDeleteComment } from '@/hooks/useComments';
 import { RecipeComment } from '@/types/comment';
 import { formatDistanceToNow } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface RecipeCommentsProps {
   recipeId: string;
@@ -12,6 +13,7 @@ interface RecipeCommentsProps {
 
 export function RecipeComments({ recipeId }: RecipeCommentsProps) {
   const { data: comments = [], isLoading } = useComments(recipeId);
+  const { user } = useAuth();
   const createComment = useCreateComment();
   const updateComment = useUpdateComment();
   const deleteComment = useDeleteComment();
@@ -124,25 +126,27 @@ export function RecipeComments({ recipeId }: RecipeCommentsProps) {
                       {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                       {comment.updated_at !== comment.created_at && ' (edited)'}
                     </span>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(comment)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(comment.id)}
-                        disabled={deleteComment.isPending}
-                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    {user && comment.user_id === user.id && (
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(comment)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(comment.id)}
+                          disabled={deleteComment.isPending}
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </>
               )}
