@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useComments, useCreateComment, useUpdateComment, useDeleteComment } from '@/hooks/useComments';
 import { RecipeComment } from '@/types/comment';
 import { formatDistanceToNow } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface RecipeCommentsProps {
   recipeId: string;
