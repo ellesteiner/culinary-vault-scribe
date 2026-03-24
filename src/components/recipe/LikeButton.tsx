@@ -1,6 +1,8 @@
 import { Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToggleLike } from '@/hooks/useLikes';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface LikeButtonProps {
   recipeId: string;
@@ -10,9 +12,14 @@ interface LikeButtonProps {
 
 export function LikeButton({ recipeId, likeCount, isLiked }: LikeButtonProps) {
   const toggleLike = useToggleLike();
+  const { user } = useAuth();
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!user) {
+      toast.error('Please sign in to like recipes');
+      return;
+    }
     toggleLike.mutate(recipeId);
   };
 
