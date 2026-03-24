@@ -67,25 +67,12 @@ Deno.serve(async (req) => {
     const userId = user.id;
 
     // Check existing like
-    let existingLike;
-    if (userId) {
-      const { data } = await supabase
-        .from("recipe_likes")
-        .select("id")
-        .eq("recipe_id", recipe_id)
-        .eq("user_id", userId)
-        .maybeSingle();
-      existingLike = data;
-    } else if (ip) {
-      const { data } = await supabase
-        .from("recipe_likes")
-        .select("id")
-        .eq("recipe_id", recipe_id)
-        .is("user_id", null)
-        .eq("ip_address", ip)
-        .maybeSingle();
-      existingLike = data;
-    }
+    const { data: existingLike } = await supabase
+      .from("recipe_likes")
+      .select("id")
+      .eq("recipe_id", recipe_id)
+      .eq("user_id", userId)
+      .maybeSingle();
 
     if (existingLike) {
       // Unlike
@@ -95,15 +82,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get location data
-    const location_data = await getLocationFromIP(ip);
-
     // Insert like
     await supabase.from("recipe_likes").insert({
       recipe_id,
       user_id: userId,
-      ip_address: ip || null,
-      location_data,
     });
 
     return new Response(JSON.stringify({ liked: true }), {
