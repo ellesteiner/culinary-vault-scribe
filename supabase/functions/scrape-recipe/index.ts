@@ -170,9 +170,8 @@ Deno.serve(async (req) => {
     }
   } catch (error) {
     console.error('Scraping error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to scrape recipe';
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'Failed to scrape recipe' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
