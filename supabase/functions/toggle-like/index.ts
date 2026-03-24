@@ -44,45 +44,35 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get user from auth header (optional)
+    // Require authentication
     const authHeader = req.headers.get("authorization");
-    let userId: string | null = null;
-    if (authHeader) {
-      const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-      const userClient = createClient(supabaseUrl, anonKey, {
-        global: { headers: { Authorization: authHeader } },
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Authentication required" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
-      const { data: { user } } = await userClient.auth.getUser();
-      userId = user?.id || null;
     }
 
-    // Get IP from headers
-    const ip =
-      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-      req.headers.get("cf-connecting-ip") ||
-      req.headers.get("x-real-ip") ||
-      "";
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user } } = await userClient.auth.getUser();
+    if (!user) {
+      return new Response(JSON.stringify({ error: "Authentication required" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userId = user.id;
 
     // Check existing like
-    let existingLike;
-    if (userId) {
-      const { data } = await supabase
-        .from("recipe_likes")
-        .select("id")
-        .eq("recipe_id", recipe_id)
-        .eq("user_id", userId)
-        .maybeSingle();
-      existingLike = data;
-    } else if (ip) {
-      const { data } = await supabase
-        .from("recipe_likes")
-        .select("id")
-        .eq("recipe_id", recipe_id)
-        .is("user_id", null)
-        .eq("ip_address", ip)
-        .maybeSingle();
-      existingLike = data;
-    }
+    const { data: existingLike } = await supabase
+      .from("recipe_likes")
+      .select("id")
+      .eq("recipe_id", recipe_id)
+      .eq("user_id", userId)
+      .maybeSingle();
 
     if (existingLike) {
       // Unlike
@@ -92,15 +82,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get location data
-    const location_data = await getLocationFromIP(ip);
-
     // Insert like
     await supabase.from("recipe_likes").insert({
       recipe_id,
       user_id: userId,
-      ip_address: ip || null,
-      location_data,
     });
 
     return new Response(JSON.stringify({ liked: true }), {
@@ -109,7 +94,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error("Error in toggle-like:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: "An unexpected error occurred" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
