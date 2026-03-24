@@ -27,9 +27,12 @@ export function useCreateComment() {
 
   return useMutation({
     mutationFn: async ({ recipeId, content }: { recipeId: string; content: string }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Must be logged in to comment');
+      
       const { data, error } = await supabase
         .from('recipe_comments')
-        .insert({ recipe_id: recipeId, content })
+        .insert({ recipe_id: recipeId, content, user_id: user.id })
         .select()
         .single();
 
