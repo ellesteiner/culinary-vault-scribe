@@ -27,8 +27,8 @@ export function useCreateComment() {
 
   return useMutation({
     mutationFn: async ({ recipeId, content }: { recipeId: string; content: string }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Must be logged in to comment');
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) throw new Error('Must be logged in to comment');
       
       const { data, error } = await supabase
         .from('recipe_comments')
@@ -36,7 +36,10 @@ export function useCreateComment() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Comment insert error details:', error.message, error.code, error.details);
+        throw error;
+      }
       return data;
     },
     onSuccess: (_, variables) => {

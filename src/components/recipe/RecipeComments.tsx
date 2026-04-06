@@ -60,24 +60,28 @@ export function RecipeComments({ recipeId }: RecipeCommentsProps) {
       </h3>
 
       {/* Add Comment Form */}
-      <div className="mb-6">
-        <Textarea
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          placeholder="Add a comment or note about this recipe..."
-          className="mb-2 resize-none"
-          rows={3}
-        />
-        <Button
-          onClick={handleSubmit}
-          disabled={!newComment.trim() || createComment.isPending}
-          size="sm"
-          className="btn-cookbook"
-        >
-          <Send className="w-4 h-4 mr-2" />
-          {createComment.isPending ? 'Adding...' : 'Add Comment'}
-        </Button>
-      </div>
+      {user ? (
+        <div className="mb-6">
+          <Textarea
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="Add a comment or note about this recipe..."
+            className="mb-2 resize-none"
+            rows={3}
+          />
+          <Button
+            onClick={handleSubmit}
+            disabled={!newComment.trim() || createComment.isPending}
+            size="sm"
+            className="btn-cookbook"
+          >
+            <Send className="w-4 h-4 mr-2" />
+            {createComment.isPending ? 'Adding...' : 'Add Comment'}
+          </Button>
+        </div>
+      ) : (
+        <p className="text-muted-foreground text-sm mb-6">Sign in to add a comment.</p>
+      )}
 
       {/* Comments List */}
       {isLoading ? (
