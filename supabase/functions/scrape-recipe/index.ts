@@ -134,10 +134,15 @@ Deno.serve(async (req) => {
           'Upgrade-Insecure-Requests': '1',
         },
         signal: controller.signal,
-        redirect: 'follow',
+        redirect: 'manual',
       });
 
       clearTimeout(timeoutId);
+
+      // Reject redirects to prevent SSRF via open redirectors
+      if (response.status >= 300 && response.status < 400) {
+        throw new Error('Redirects are not allowed');
+      }
 
       if (!response.ok) {
         throw new Error(`Failed to fetch URL: ${response.status}`);
