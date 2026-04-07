@@ -147,8 +147,9 @@ export function useUpdateRecipe() {
         if (tagsError) throw tagsError;
       }
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['recipes'] });
+      queryClient.invalidateQueries({ queryKey: ['recipe', variables.id] });
       toast.success('Recipe updated!');
     },
     onError: (error) => {
