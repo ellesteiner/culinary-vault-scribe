@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, BookOpen, Search, LogIn, User, LogOut, ChevronDown, BarChart3 } from 'lucide-react';
+import { Plus, BookOpen, Search, LogIn, User, LogOut, ChevronDown, BarChart3, ShoppingBasket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthModal } from '@/components/auth/AuthModal';
+import { useShoppingList } from '@/hooks/useShoppingList';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -26,6 +27,8 @@ export function Header({ onAddRecipe, searchQuery, onSearchChange, recipeCount }
   const { user, profile, signOut } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const navigate = useNavigate();
+  const { items: shoppingItems } = useShoppingList();
+  const activeShoppingCount = shoppingItems.filter((i) => !i.checked).length;
 
   const { data: isAdmin } = useQuery({
     queryKey: ['is-admin', user?.id],
@@ -80,6 +83,21 @@ export function Header({ onAddRecipe, searchQuery, onSearchChange, recipeCount }
                   className="pl-10 w-64 input-cookbook"
                 />
               </div>
+
+              <Button
+                variant="outline"
+                onClick={() => navigate('/shopping-list')}
+                className="gap-2 relative min-h-[44px]"
+                aria-label="Shopping list"
+              >
+                <ShoppingBasket className="w-4 h-4" />
+                <span className="hidden sm:inline">List</span>
+                {activeShoppingCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold flex items-center justify-center">
+                    {activeShoppingCount}
+                  </span>
+                )}
+              </Button>
 
               {user && (
                 <Button onClick={onAddRecipe} className="btn-cookbook gap-2">
