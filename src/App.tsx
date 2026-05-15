@@ -21,6 +21,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/recipe/:id" element={<RecipeDetail />} />
+          <Route path="/shopping-list" element={<ShoppingList />} />
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
