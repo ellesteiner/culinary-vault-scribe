@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
   Clock,
-  Users,
   ExternalLink,
   Edit3,
   ChefHat,
@@ -12,6 +11,7 @@ import {
   Circle,
   BookOpen,
   User,
+  ShoppingBasket,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -19,20 +19,32 @@ import { Badge } from '@/components/ui/badge';
 import { useRecipe } from '@/hooks/useRecipe';
 import { RecipeModal } from '@/components/recipe/RecipeModal';
 import { RecipeComments } from '@/components/recipe/RecipeComments';
+import { ShareRecipeButton } from '@/components/recipe/ShareRecipeButton';
+import { ServingScaler } from '@/components/recipe/ServingScaler';
 import { useAuth } from '@/contexts/AuthContext';
+import { scaleIngredient } from '@/lib/ingredientParser';
+import { useShoppingList } from '@/hooks/useShoppingList';
+import { toast } from 'sonner';
 
 export default function RecipeDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: recipe, isLoading, error } = useRecipe(id);
   const { user } = useAuth();
+  const { addItems } = useShoppingList();
 
   const [cookMode, setCookMode] = useState(false);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
   const [checkedSteps, setCheckedSteps] = useState<Set<number>>(new Set());
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [multiplier, setMultiplier] = useState(1);
 
   const isOwner = user && recipe?.user_id === user.id;
+
+  const scaledIngredients = useMemo(() => {
+    if (!recipe) return [];
+    return recipe.ingredients.map((ing) => scaleIngredient(ing, multiplier));
+  }, [recipe, multiplier]);
 
   const toggleIngredient = (index: number) => {
     setCheckedIngredients((prev) => {
@@ -49,6 +61,17 @@ export default function RecipeDetail() {
       if (next.has(index)) next.delete(index);
       else next.add(index);
       return next;
+    });
+  };
+
+  const handleAddToShoppingList = () => {
+    if (!recipe) return;
+    const count = addItems(scaledIngredients, { id: recipe.id, title: recipe.title });
+    toast.success(`Added ${count} item${count === 1 ? '' : 's'} to shopping list`, {
+      action: {
+        label: 'View list',
+        onClick: () => navigate('/shopping-list'),
+      },
     });
   };
 
@@ -92,24 +115,25 @@ export default function RecipeDetail() {
         )}
 
         {/* Navigation Bar */}
-        <div className="absolute top-4 left-4 right-4 flex justify-between items-center">
+        <div className="absolute top-4 left-4 right-4 flex justify-between items-start gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={() => navigate('/')}
-            className="bg-white/95 backdrop-blur-sm hover:bg-white text-foreground border-border shadow-sm"
+            className="bg-white/95 backdrop-blur-sm hover:bg-white text-foreground border-border shadow-sm min-h-[44px]"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
+            <ShareRecipeButton recipe={recipe} ingredients={scaledIngredients} />
             {recipe.source_url && (
               <Button
                 variant="outline"
                 size="sm"
                 asChild
-                className="bg-white/95 backdrop-blur-sm hover:bg-white text-foreground border-border shadow-sm"
+                className="bg-white/95 backdrop-blur-sm hover:bg-white text-foreground border-border shadow-sm min-h-[44px]"
               >
                 <a href={recipe.source_url} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="w-4 h-4 mr-2" />
@@ -122,7 +146,7 @@ export default function RecipeDetail() {
                 variant="outline"
                 size="sm"
                 onClick={() => setIsEditModalOpen(true)}
-                className="bg-white/95 backdrop-blur-sm hover:bg-white text-foreground border-border shadow-sm"
+                className="bg-white/95 backdrop-blur-sm hover:bg-white text-foreground border-border shadow-sm min-h-[44px]"
               >
                 <Edit3 className="w-4 h-4 mr-2" />
                 Edit
@@ -167,12 +191,6 @@ export default function RecipeDetail() {
                   <span>Cook: {recipe.cook_time}</span>
                 </div>
               )}
-              {recipe.servings && (
-                <div className="flex items-center gap-1.5">
-                  <Users className="w-4 h-4" />
-                  <span>{recipe.servings}</span>
-                </div>
-              )}
             </div>
 
             {/* Tags */}
@@ -189,11 +207,11 @@ export default function RecipeDetail() {
 
           {/* Cook Mode Toggle */}
           <div className="px-6 md:px-8 py-4 bg-accent/5 border-b border-border">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-3">
                 <ChefHat className="w-5 h-5 text-primary" />
                 <span className="font-medium">Cook Mode</span>
-                <span className="text-sm text-muted-foreground">
+                <span className="text-sm text-muted-foreground hidden sm:inline">
                   Check off ingredients and steps as you go
                 </span>
               </div>
@@ -201,7 +219,7 @@ export default function RecipeDetail() {
                 variant={cookMode ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setCookMode(!cookMode)}
-                className={cookMode ? 'btn-cookbook' : ''}
+                className={`min-h-[44px] ${cookMode ? 'btn-cookbook' : ''}`}
               >
                 {cookMode ? 'Active' : 'Enable'}
               </Button>
@@ -209,20 +227,37 @@ export default function RecipeDetail() {
           </div>
 
           {/* Two Column Layout */}
-          <div className="grid lg:grid-cols-[320px_1fr] divide-y lg:divide-y-0 lg:divide-x divide-border">
+          <div className="grid lg:grid-cols-[360px_1fr] divide-y lg:divide-y-0 lg:divide-x divide-border">
             {/* Ingredients Sidebar */}
             <div className="p-6 md:p-8">
-              <h2 className="font-serif text-2xl text-foreground mb-6 flex items-center gap-2">
+              <h2 className="font-serif text-2xl text-foreground mb-4 flex items-center gap-2">
                 <span>Ingredients</span>
                 {cookMode && (
                   <span className="text-sm font-sans text-muted-foreground">
-                    ({checkedIngredients.size}/{recipe.ingredients.length})
+                    ({checkedIngredients.size}/{scaledIngredients.length})
                   </span>
                 )}
               </h2>
 
+              {/* Serving scaler */}
+              <ServingScaler
+                originalServings={recipe.servings}
+                multiplier={multiplier}
+                onChange={setMultiplier}
+              />
+
+              {/* Add to shopping list */}
+              <Button
+                onClick={handleAddToShoppingList}
+                variant="outline"
+                className="w-full mb-5 min-h-[44px] border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground"
+              >
+                <ShoppingBasket className="w-4 h-4 mr-2" />
+                Add to Shopping List
+              </Button>
+
               <ul className="space-y-3">
-                {recipe.ingredients.map((ingredient, index) => (
+                {scaledIngredients.map((ingredient, index) => (
                   <motion.li
                     key={index}
                     initial={false}
@@ -278,7 +313,7 @@ export default function RecipeDetail() {
                     <button
                       onClick={() => cookMode && toggleStep(index)}
                       disabled={!cookMode}
-                      className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-serif text-lg transition-colors ${
+                      className={`shrink-0 w-11 h-11 rounded-full flex items-center justify-center font-serif text-lg transition-colors ${
                         cookMode && checkedSteps.has(index)
                           ? 'bg-primary text-primary-foreground'
                           : cookMode
