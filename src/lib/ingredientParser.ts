@@ -33,7 +33,7 @@ export function parseIngredient(raw: string): ParsedIngredient {
         new RegExp(`(\\d+)\\s*${glyph}`, 'g'),
         `$1 ${frac}`
       );
-      normalized = normalized.replaceAll(glyph, frac);
+      normalized = normalized.split(glyph).join(frac);
     }
   }
 
