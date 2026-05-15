@@ -27,6 +27,8 @@ export function Header({ onAddRecipe, searchQuery, onSearchChange, recipeCount }
   const { user, profile, signOut } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const navigate = useNavigate();
+  const { items: shoppingItems } = useShoppingList();
+  const activeShoppingCount = shoppingItems.filter((i) => !i.checked).length;
 
   const { data: isAdmin } = useQuery({
     queryKey: ['is-admin', user?.id],
