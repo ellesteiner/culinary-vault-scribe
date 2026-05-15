@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, BookOpen, Search, LogIn, User, LogOut, ChevronDown, BarChart3 } from 'lucide-react';
+import { Plus, BookOpen, Search, LogIn, User, LogOut, ChevronDown, BarChart3, ShoppingBasket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
