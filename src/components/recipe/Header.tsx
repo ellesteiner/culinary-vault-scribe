@@ -84,6 +84,21 @@ export function Header({ onAddRecipe, searchQuery, onSearchChange, recipeCount }
                 />
               </div>
 
+              <Button
+                variant="outline"
+                onClick={() => navigate('/shopping-list')}
+                className="gap-2 relative min-h-[44px]"
+                aria-label="Shopping list"
+              >
+                <ShoppingBasket className="w-4 h-4" />
+                <span className="hidden sm:inline">List</span>
+                {activeShoppingCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold flex items-center justify-center">
+                    {activeShoppingCount}
+                  </span>
+                )}
+              </Button>
+
               {user && (
                 <Button onClick={onAddRecipe} className="btn-cookbook gap-2">
                   <Plus className="w-4 h-4" />
