@@ -1,19 +1,24 @@
 import { useState, useMemo } from 'react';
-import { Check, Plus, X, Tag as TagIcon } from 'lucide-react';
+import { Check, Plus, X, Tag as TagIcon, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tag } from '@/types/recipe';
 import { useTags, useCreateTag } from '@/hooks/useRecipes';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface TagSelectorProps {
   selectedTagIds: string[];
   onChange: (tagIds: string[]) => void;
+  suggestionContext?: { title: string; ingredients: string[] };
 }
 
-export function TagSelector({ selectedTagIds, onChange }: TagSelectorProps) {
+export function TagSelector({ selectedTagIds, onChange, suggestionContext }: TagSelectorProps) {
   const [inputValue, setInputValue] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestions, setSuggestions] = useState<Tag[]>([]);
   const { data: tags = [], isLoading } = useTags();
   const createTag = useCreateTag();
 
@@ -54,13 +59,100 @@ export function TagSelector({ selectedTagIds, onChange }: TagSelectorProps) {
   const removeTag = (tagId: string) => {
     onChange(selectedTagIds.filter((id) => id !== tagId));
   };
+  const handleSuggest = async () => {
+    if (!suggestionContext || tags.length === 0) return;
+    const { title, ingredients } = suggestionContext;
+    const cleanIngredients = ingredients.filter(Boolean);
+    if (!title.trim() && cleanIngredients.length === 0) {
+      toast.error('Add a title or ingredients first to get tag suggestions');
+      return;
+    }
+    setSuggesting(true);
+    setSuggestions([]);
+    try {
+      const { data, error } = await supabase.functions.invoke('suggest-tags', {
+        body: {
+          title,
+          ingredients: cleanIngredients,
+          availableTags: tags.map((t) => t.name),
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const names: string[] = data?.tags ?? [];
+      const matched = names
+        .map((n) => tags.find((t) => t.name.toLowerCase() === n.toLowerCase()))
+        .filter((t): t is Tag => !!t && !selectedTagIds.includes(t.id));
+      setSuggestions(matched);
+      if (matched.length === 0) toast.info('No new tag suggestions');
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e.message || 'Could not get tag suggestions');
+    } finally {
+      setSuggesting(false);
+    }
+  };
+
+  const acceptSuggestion = (tag: Tag) => {
+    if (!selectedTagIds.includes(tag.id)) onChange([...selectedTagIds, tag.id]);
+    setSuggestions((prev) => prev.filter((t) => t.id !== tag.id));
+  };
+
 
   return (
     <div className="space-y-3">
-      <label className="text-sm font-medium text-foreground flex items-center gap-2">
-        <TagIcon className="w-4 h-4" />
-        Tags
-      </label>
+      <div className="flex items-center justify-between gap-3">
+        <label className="text-sm font-medium text-foreground flex items-center gap-2">
+          <TagIcon className="w-4 h-4" />
+          Tags
+        </label>
+        {suggestionContext && (
+          <button
+            type="button"
+            onClick={handleSuggest}
+            disabled={suggesting || tags.length === 0}
+            className="text-xs flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-primary hover:bg-primary/10 transition-colors disabled:opacity-50 min-h-[32px]"
+          >
+            {suggesting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="w-3.5 h-3.5" />
+            )}
+            {suggesting ? 'Thinking...' : 'Suggest tags'}
+          </button>
+        )}
+      </div>
+
+      {/* AI suggestions */}
+      <AnimatePresence>
+        {suggestions.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="p-3 rounded-lg bg-primary/5 border border-primary/15"
+          >
+            <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
+              <Sparkles className="w-3 h-3 text-primary" />
+              Suggested for this recipe — tap to add
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {suggestions.map((tag) => (
+                <button
+                  key={tag.id}
+                  type="button"
+                  onClick={() => acceptSuggestion(tag)}
+                  className="recipe-tag border border-dashed border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground transition-colors flex items-center gap-1"
+                >
+                  <Plus className="w-3 h-3" />
+                  {tag.name}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
 
       {/* Selected tags */}
       <AnimatePresence>

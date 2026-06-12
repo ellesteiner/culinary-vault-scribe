@@ -321,6 +321,7 @@ export function RecipeModal({ isOpen, onClose, recipe }: RecipeModalProps) {
             <TagSelector
               selectedTagIds={formData.tagIds}
               onChange={(tagIds) => updateField('tagIds', tagIds)}
+              suggestionContext={{ title: formData.title, ingredients: formData.ingredients }}
             />
 
             {/* Notes */}
