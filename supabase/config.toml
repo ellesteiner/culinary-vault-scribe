@@ -9,3 +9,6 @@ verify_jwt = false
 
 [functions.ai-sous-chef]
 verify_jwt = false
+
+[functions.suggest-tags]
+verify_jwt = false
