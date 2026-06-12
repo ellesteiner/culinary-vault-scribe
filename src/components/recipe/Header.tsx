@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, BookOpen, Search, LogIn, User, LogOut, ChevronDown, BarChart3, ShoppingBasket } from 'lucide-react';
+import { Plus, BookOpen, Search, LogIn, User, LogOut, ChevronDown, BarChart3, ShoppingBasket, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthModal } from '@/components/auth/AuthModal';
+import { AISousChefModal } from '@/components/recipe/AISousChefModal';
 import { useShoppingList } from '@/hooks/useShoppingList';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,6 +27,7 @@ interface HeaderProps {
 export function Header({ onAddRecipe, searchQuery, onSearchChange, recipeCount }: HeaderProps) {
   const { user, profile, signOut } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [sousChefOpen, setSousChefOpen] = useState(false);
   const navigate = useNavigate();
   const { items: shoppingItems } = useShoppingList();
   const activeShoppingCount = shoppingItems.filter((i) => !i.checked).length;
@@ -74,6 +76,15 @@ export function Header({ onAddRecipe, searchQuery, onSearchChange, recipeCount }
               animate={{ opacity: 1, x: 0 }}
               className="flex items-center gap-3"
             >
+              <Button
+                onClick={() => setSousChefOpen(true)}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 min-h-[44px] shadow-md"
+                aria-label="AI Sous Chef"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span className="hidden sm:inline">AI Sous Chef</span>
+              </Button>
+
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -145,6 +156,7 @@ export function Header({ onAddRecipe, searchQuery, onSearchChange, recipeCount }
       </header>
 
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+      <AISousChefModal open={sousChefOpen} onClose={() => setSousChefOpen(false)} />
     </>
   );
 }
