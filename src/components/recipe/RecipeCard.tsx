@@ -1,8 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Clock, Users, Edit2, Trash2, ExternalLink, User } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { RecipeWithTags } from '@/types/recipe';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { LikeButton } from './LikeButton';
 
 interface RecipeCardProps {
