@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Check, Plus, X, Tag as TagIcon, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tag } from '@/types/recipe';
@@ -97,6 +97,25 @@ export function TagSelector({ selectedTagIds, onChange, suggestionContext }: Tag
     if (!selectedTagIds.includes(tag.id)) onChange([...selectedTagIds, tag.id]);
     setSuggestions((prev) => prev.filter((t) => t.id !== tag.id));
   };
+
+  // Auto-suggest tags once when meaningful context is available
+  const autoSuggestedKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!suggestionContext || tags.length === 0 || suggesting) return;
+    const cleanIngredients = suggestionContext.ingredients.filter(Boolean);
+    const title = suggestionContext.title?.trim() || '';
+    if (cleanIngredients.length < 2 && title.length < 3) return;
+    const key = `${title}::${cleanIngredients.join('|')}`;
+    if (autoSuggestedKeyRef.current === key) return;
+    autoSuggestedKeyRef.current = key;
+    const t = setTimeout(() => {
+      handleSuggest();
+    }, 800);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suggestionContext?.title, suggestionContext?.ingredients?.join('|'), tags.length]);
+
+
 
 
   return (
