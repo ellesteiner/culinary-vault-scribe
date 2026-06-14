@@ -27,8 +27,21 @@ const placeholderImages = [
 export function RecipeCard({ recipe, onEdit, onDelete, index, likeCount = 0, isLiked = false }: RecipeCardProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { data: isAdmin } = useQuery({
+    queryKey: ['is-admin', user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user!.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+      return !!data;
+    },
+  });
   const imageUrl = recipe.image_url || placeholderImages[index % placeholderImages.length];
-  const isOwner = user && recipe.user_id === user.id;
+  const isOwner = !!user && (recipe.user_id === user.id || isAdmin);
 
   const handleCardClick = () => {
     navigate(`/recipe/${recipe.id}`);
