@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link, Loader2, Sparkles, Clock, Users, ChefHat, Image as ImageIcon, X, RefreshCw } from 'lucide-react';
+import { Link, Loader2, Sparkles, Clock, Users, ChefHat, Image as ImageIcon, X, RefreshCw, ClipboardPaste, Wand2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,10 +8,13 @@ import { Button } from '@/components/ui/button';
 import { DynamicList } from './DynamicList';
 import { TagSelector } from './TagSelector';
 import { RecipeFormData, RecipeWithTags, defaultRecipeFormData } from '@/types/recipe';
-import { useCreateRecipe, useUpdateRecipe } from '@/hooks/useRecipes';
+import { useCreateRecipe, useUpdateRecipe, useTags, useCreateTag } from '@/hooks/useRecipes';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+type ImportMode = 'url' | 'paste';
+
 
 interface RecipeModalProps {
   isOpen: boolean;
