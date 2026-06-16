@@ -12,3 +12,6 @@ verify_jwt = false
 
 [functions.suggest-tags]
 verify_jwt = false
+
+[functions.parse-recipe]
+verify_jwt = false

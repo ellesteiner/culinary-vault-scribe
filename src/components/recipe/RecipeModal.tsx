@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link, Loader2, Sparkles, Clock, Users, ChefHat, Image as ImageIcon, X, RefreshCw } from 'lucide-react';
+import { Link, Loader2, Sparkles, Clock, Users, ChefHat, Image as ImageIcon, X, RefreshCw, ClipboardPaste, Wand2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,10 +8,13 @@ import { Button } from '@/components/ui/button';
 import { DynamicList } from './DynamicList';
 import { TagSelector } from './TagSelector';
 import { RecipeFormData, RecipeWithTags, defaultRecipeFormData } from '@/types/recipe';
-import { useCreateRecipe, useUpdateRecipe } from '@/hooks/useRecipes';
+import { useCreateRecipe, useUpdateRecipe, useTags, useCreateTag } from '@/hooks/useRecipes';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+type ImportMode = 'url' | 'paste';
+
 
 interface RecipeModalProps {
   isOpen: boolean;
@@ -22,14 +25,20 @@ interface RecipeModalProps {
 export function RecipeModal({ isOpen, onClose, recipe }: RecipeModalProps) {
   const [formData, setFormData] = useState<RecipeFormData>(defaultRecipeFormData);
   const [urlInput, setUrlInput] = useState('');
+  const [pasteInput, setPasteInput] = useState('');
+  const [importMode, setImportMode] = useState<ImportMode>('url');
   const [isScraping, setIsScraping] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
   const { user, profile } = useAuth();
 
   const createRecipe = useCreateRecipe();
   const updateRecipe = useUpdateRecipe();
+  const { data: allTags = [] } = useTags();
+  const createTag = useCreateTag();
 
   const isEditing = !!recipe;
   const isSubmitting = createRecipe.isPending || updateRecipe.isPending;
+
 
   // Reset form when modal opens/closes or recipe changes
   useEffect(() => {
@@ -51,9 +60,69 @@ export function RecipeModal({ isOpen, onClose, recipe }: RecipeModalProps) {
       } else {
         setFormData(defaultRecipeFormData);
         setUrlInput('');
+        setPasteInput('');
+        setImportMode('url');
       }
     }
   }, [isOpen, recipe]);
+
+  const handleParse = async () => {
+    const text = pasteInput.trim();
+    if (!text) return;
+
+    setIsParsing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('parse-recipe', {
+        body: { text },
+      });
+
+      if (error) throw error;
+      if (!data || data.error) throw new Error(data?.error || 'Parse failed');
+
+      // Resolve AI-suggested tag names to tag IDs, creating any that don't exist.
+      const suggestedTagNames: string[] = Array.isArray(data.tags) ? data.tags : [];
+      const tagIds: string[] = [];
+      const existingByName = new Map(allTags.map((t) => [t.name.toLowerCase(), t]));
+
+      for (const name of suggestedTagNames) {
+        const key = name.toLowerCase();
+        const existing = existingByName.get(key);
+        if (existing) {
+          tagIds.push(existing.id);
+        } else {
+          try {
+            const created = await createTag.mutateAsync(name);
+            if (created?.id) {
+              tagIds.push(created.id);
+              existingByName.set(key, created);
+            }
+          } catch (e) {
+            // Skip tag creation failures; parsing should not fail because of tags.
+            console.warn('Failed to create tag', name, e);
+          }
+        }
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        title: data.title || prev.title,
+        ingredients: data.ingredients?.length > 0 ? data.ingredients : prev.ingredients,
+        instructions: data.instructions?.length > 0 ? data.instructions : prev.instructions,
+        cook_time: data.cook_time || prev.cook_time,
+        prep_time: data.prep_time || prev.prep_time,
+        servings: data.servings || prev.servings,
+        notes: data.notes || prev.notes,
+        tagIds: tagIds.length > 0 ? Array.from(new Set([...prev.tagIds, ...tagIds])) : prev.tagIds,
+      }));
+      toast.success('Recipe parsed! Review and save below.');
+    } catch (err) {
+      console.error('Parse error:', err);
+      toast.error('Could not parse recipe. Try editing details manually.');
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
 
   const updateField = <K extends keyof RecipeFormData>(
     field: K,
@@ -139,53 +208,113 @@ export function RecipeModal({ isOpen, onClose, recipe }: RecipeModalProps) {
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-auto">
           <div className="p-6 space-y-6">
-            {/* URL Import Section */}
+            {/* Import Section */}
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-4 rounded-xl bg-gradient-to-r from-primary/5 to-accent/10 border border-primary/10"
+              className="p-4 rounded-xl bg-gradient-to-r from-primary/5 to-accent/10 border border-primary/10 space-y-3"
             >
-              <label className="text-sm font-medium text-foreground flex items-center gap-2 mb-3">
-                <Sparkles className="w-4 h-4 text-accent" />
-                {isEditing ? 'Re-import from URL' : 'Import from URL'}
-              </label>
-              <div className="flex gap-3">
-                <div className="flex-1 relative">
-                  <Link className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    value={urlInput}
-                    onChange={(e) => setUrlInput(e.target.value)}
-                    placeholder="Paste recipe URL..."
-                    className="pl-10 input-cookbook"
-                  />
+              <div className="flex items-center justify-between gap-3">
+                <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-accent" />
+                  {isEditing ? 'Re-import recipe' : 'Quick import'}
+                </label>
+                <div className="inline-flex rounded-md border border-border bg-background/60 p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setImportMode('url')}
+                    className={`px-3 py-1 text-xs rounded-sm transition-colors flex items-center gap-1.5 ${
+                      importMode === 'url' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Link className="w-3 h-3" /> URL
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImportMode('paste')}
+                    className={`px-3 py-1 text-xs rounded-sm transition-colors flex items-center gap-1.5 ${
+                      importMode === 'paste' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <ClipboardPaste className="w-3 h-3" /> Paste Recipe
+                  </button>
                 </div>
-                <Button
-                  type="button"
-                  onClick={handleScrape}
-                  disabled={!urlInput.trim() || isScraping}
-                  className="btn-cookbook px-6"
-                >
-                  {isScraping ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Importing...
-                    </>
-                  ) : isEditing ? (
-                    <>
-                      <RefreshCw className="w-4 h-4" />
-                      Re-import
-                    </>
-                  ) : (
-                    'Import'
-                  )}
-                </Button>
               </div>
-              {isEditing && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  Re-import will update the recipe with fresh data from the URL
-                </p>
+
+              {importMode === 'url' ? (
+                <>
+                  <div className="flex gap-3">
+                    <div className="flex-1 relative">
+                      <Link className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        value={urlInput}
+                        onChange={(e) => setUrlInput(e.target.value)}
+                        placeholder="Paste recipe URL..."
+                        className="pl-10 input-cookbook"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={handleScrape}
+                      disabled={!urlInput.trim() || isScraping}
+                      className="btn-cookbook px-6"
+                    >
+                      {isScraping ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Importing...
+                        </>
+                      ) : isEditing ? (
+                        <>
+                          <RefreshCw className="w-4 h-4" />
+                          Re-import
+                        </>
+                      ) : (
+                        'Import'
+                      )}
+                    </Button>
+                  </div>
+                  {isEditing && (
+                    <p className="text-xs text-muted-foreground">
+                      Re-import will update the recipe with fresh data from the URL
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Textarea
+                    value={pasteInput}
+                    onChange={(e) => setPasteInput(e.target.value)}
+                    placeholder={`Paste a recipe from anywhere — ChatGPT, a cookbook, a blog, an email, markdown, YAML, plain text, or a transcribed handwritten recipe.\n\nExample:\nGrandma's Apple Pie\nServes 8 — 20 min prep, 45 min bake\n\nIngredients\n- 6 apples, peeled and sliced\n- 3/4 cup sugar\n- 1 tsp cinnamon\n\nInstructions\n1. Preheat oven to 375°F.\n2. Toss apples with sugar and cinnamon.\n3. Pour into crust and bake 45 minutes.`}
+                    className="input-cookbook min-h-[200px] font-mono text-sm leading-relaxed"
+                  />
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs text-muted-foreground">
+                      AI will extract ingredients, steps, timing, and suggest tags. Review everything below before saving.
+                    </p>
+                    <Button
+                      type="button"
+                      onClick={handleParse}
+                      disabled={!pasteInput.trim() || isParsing}
+                      className="btn-cookbook px-6 shrink-0"
+                    >
+                      {isParsing ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Parsing...
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 className="w-4 h-4" />
+                          Parse Recipe
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </>
               )}
             </motion.div>
+
 
             {/* Title */}
             <div>
