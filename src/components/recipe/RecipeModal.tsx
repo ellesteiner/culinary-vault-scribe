@@ -25,14 +25,20 @@ interface RecipeModalProps {
 export function RecipeModal({ isOpen, onClose, recipe }: RecipeModalProps) {
   const [formData, setFormData] = useState<RecipeFormData>(defaultRecipeFormData);
   const [urlInput, setUrlInput] = useState('');
+  const [pasteInput, setPasteInput] = useState('');
+  const [importMode, setImportMode] = useState<ImportMode>('url');
   const [isScraping, setIsScraping] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
   const { user, profile } = useAuth();
 
   const createRecipe = useCreateRecipe();
   const updateRecipe = useUpdateRecipe();
+  const { data: allTags = [] } = useTags();
+  const createTag = useCreateTag();
 
   const isEditing = !!recipe;
   const isSubmitting = createRecipe.isPending || updateRecipe.isPending;
+
 
   // Reset form when modal opens/closes or recipe changes
   useEffect(() => {
