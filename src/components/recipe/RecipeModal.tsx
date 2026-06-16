@@ -60,9 +60,69 @@ export function RecipeModal({ isOpen, onClose, recipe }: RecipeModalProps) {
       } else {
         setFormData(defaultRecipeFormData);
         setUrlInput('');
+        setPasteInput('');
+        setImportMode('url');
       }
     }
   }, [isOpen, recipe]);
+
+  const handleParse = async () => {
+    const text = pasteInput.trim();
+    if (!text) return;
+
+    setIsParsing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('parse-recipe', {
+        body: { text },
+      });
+
+      if (error) throw error;
+      if (!data || data.error) throw new Error(data?.error || 'Parse failed');
+
+      // Resolve AI-suggested tag names to tag IDs, creating any that don't exist.
+      const suggestedTagNames: string[] = Array.isArray(data.tags) ? data.tags : [];
+      const tagIds: string[] = [];
+      const existingByName = new Map(allTags.map((t) => [t.name.toLowerCase(), t]));
+
+      for (const name of suggestedTagNames) {
+        const key = name.toLowerCase();
+        const existing = existingByName.get(key);
+        if (existing) {
+          tagIds.push(existing.id);
+        } else {
+          try {
+            const created = await createTag.mutateAsync(name);
+            if (created?.id) {
+              tagIds.push(created.id);
+              existingByName.set(key, created);
+            }
+          } catch (e) {
+            // Skip tag creation failures; parsing should not fail because of tags.
+            console.warn('Failed to create tag', name, e);
+          }
+        }
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        title: data.title || prev.title,
+        ingredients: data.ingredients?.length > 0 ? data.ingredients : prev.ingredients,
+        instructions: data.instructions?.length > 0 ? data.instructions : prev.instructions,
+        cook_time: data.cook_time || prev.cook_time,
+        prep_time: data.prep_time || prev.prep_time,
+        servings: data.servings || prev.servings,
+        notes: data.notes || prev.notes,
+        tagIds: tagIds.length > 0 ? Array.from(new Set([...prev.tagIds, ...tagIds])) : prev.tagIds,
+      }));
+      toast.success('Recipe parsed! Review and save below.');
+    } catch (err) {
+      console.error('Parse error:', err);
+      toast.error('Could not parse recipe. Try editing details manually.');
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
 
   const updateField = <K extends keyof RecipeFormData>(
     field: K,
