@@ -208,53 +208,113 @@ export function RecipeModal({ isOpen, onClose, recipe }: RecipeModalProps) {
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-auto">
           <div className="p-6 space-y-6">
-            {/* URL Import Section */}
+            {/* Import Section */}
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-4 rounded-xl bg-gradient-to-r from-primary/5 to-accent/10 border border-primary/10"
+              className="p-4 rounded-xl bg-gradient-to-r from-primary/5 to-accent/10 border border-primary/10 space-y-3"
             >
-              <label className="text-sm font-medium text-foreground flex items-center gap-2 mb-3">
-                <Sparkles className="w-4 h-4 text-accent" />
-                {isEditing ? 'Re-import from URL' : 'Import from URL'}
-              </label>
-              <div className="flex gap-3">
-                <div className="flex-1 relative">
-                  <Link className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    value={urlInput}
-                    onChange={(e) => setUrlInput(e.target.value)}
-                    placeholder="Paste recipe URL..."
-                    className="pl-10 input-cookbook"
-                  />
+              <div className="flex items-center justify-between gap-3">
+                <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-accent" />
+                  {isEditing ? 'Re-import recipe' : 'Quick import'}
+                </label>
+                <div className="inline-flex rounded-md border border-border bg-background/60 p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setImportMode('url')}
+                    className={`px-3 py-1 text-xs rounded-sm transition-colors flex items-center gap-1.5 ${
+                      importMode === 'url' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Link className="w-3 h-3" /> URL
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImportMode('paste')}
+                    className={`px-3 py-1 text-xs rounded-sm transition-colors flex items-center gap-1.5 ${
+                      importMode === 'paste' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <ClipboardPaste className="w-3 h-3" /> Paste Recipe
+                  </button>
                 </div>
-                <Button
-                  type="button"
-                  onClick={handleScrape}
-                  disabled={!urlInput.trim() || isScraping}
-                  className="btn-cookbook px-6"
-                >
-                  {isScraping ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Importing...
-                    </>
-                  ) : isEditing ? (
-                    <>
-                      <RefreshCw className="w-4 h-4" />
-                      Re-import
-                    </>
-                  ) : (
-                    'Import'
-                  )}
-                </Button>
               </div>
-              {isEditing && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  Re-import will update the recipe with fresh data from the URL
-                </p>
+
+              {importMode === 'url' ? (
+                <>
+                  <div className="flex gap-3">
+                    <div className="flex-1 relative">
+                      <Link className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        value={urlInput}
+                        onChange={(e) => setUrlInput(e.target.value)}
+                        placeholder="Paste recipe URL..."
+                        className="pl-10 input-cookbook"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={handleScrape}
+                      disabled={!urlInput.trim() || isScraping}
+                      className="btn-cookbook px-6"
+                    >
+                      {isScraping ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Importing...
+                        </>
+                      ) : isEditing ? (
+                        <>
+                          <RefreshCw className="w-4 h-4" />
+                          Re-import
+                        </>
+                      ) : (
+                        'Import'
+                      )}
+                    </Button>
+                  </div>
+                  {isEditing && (
+                    <p className="text-xs text-muted-foreground">
+                      Re-import will update the recipe with fresh data from the URL
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Textarea
+                    value={pasteInput}
+                    onChange={(e) => setPasteInput(e.target.value)}
+                    placeholder={`Paste a recipe from anywhere — ChatGPT, a cookbook, a blog, an email, markdown, YAML, plain text, or a transcribed handwritten recipe.\n\nExample:\nGrandma's Apple Pie\nServes 8 — 20 min prep, 45 min bake\n\nIngredients\n- 6 apples, peeled and sliced\n- 3/4 cup sugar\n- 1 tsp cinnamon\n\nInstructions\n1. Preheat oven to 375°F.\n2. Toss apples with sugar and cinnamon.\n3. Pour into crust and bake 45 minutes.`}
+                    className="input-cookbook min-h-[200px] font-mono text-sm leading-relaxed"
+                  />
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs text-muted-foreground">
+                      AI will extract ingredients, steps, timing, and suggest tags. Review everything below before saving.
+                    </p>
+                    <Button
+                      type="button"
+                      onClick={handleParse}
+                      disabled={!pasteInput.trim() || isParsing}
+                      className="btn-cookbook px-6 shrink-0"
+                    >
+                      {isParsing ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Parsing...
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 className="w-4 h-4" />
+                          Parse Recipe
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </>
               )}
             </motion.div>
+
 
             {/* Title */}
             <div>
