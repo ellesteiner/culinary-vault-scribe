@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, BookOpen, Search, LogIn, User, LogOut, ChevronDown, BarChart3, ShoppingBasket, Sparkles } from 'lucide-react';
+import { Plus, BookOpen, Search, LogIn, User, LogOut, ChevronDown, BarChart3, ShoppingBasket, Sparkles, KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthModal } from '@/components/auth/AuthModal';
+import { ChangePasswordModal } from '@/components/auth/ChangePasswordModal';
 import { AISousChefModal } from '@/components/recipe/AISousChefModal';
 import { useShoppingList } from '@/hooks/useShoppingList';
 import { useQuery } from '@tanstack/react-query';
@@ -27,6 +28,7 @@ interface HeaderProps {
 export function Header({ onAddRecipe, searchQuery, onSearchChange, recipeCount }: HeaderProps) {
   const { user, profile, signOut } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [sousChefOpen, setSousChefOpen] = useState(false);
   const navigate = useNavigate();
   const { items: shoppingItems } = useShoppingList();
@@ -138,6 +140,10 @@ export function Header({ onAddRecipe, searchQuery, onSearchChange, recipeCount }
                         Like Analytics
                       </DropdownMenuItem>
                     )}
+                    <DropdownMenuItem onClick={() => setChangePasswordOpen(true)}>
+                      <KeyRound className="w-4 h-4 mr-2" />
+                      Change Password
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => signOut()}>
                       <LogOut className="w-4 h-4 mr-2" />
                       Sign Out
@@ -156,6 +162,7 @@ export function Header({ onAddRecipe, searchQuery, onSearchChange, recipeCount }
       </header>
 
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+      <ChangePasswordModal isOpen={changePasswordOpen} onClose={() => setChangePasswordOpen(false)} />
       <AISousChefModal open={sousChefOpen} onClose={() => setSousChefOpen(false)} />
     </>
   );
