@@ -136,11 +136,18 @@ export function RecipeModal({ isOpen, onClose, recipe }: RecipeModalProps) {
 
     setIsScraping(true);
     try {
-      const { data, error } = await supabase.functions.invoke('scrape-recipe', {
+      const { data, error, response } = await supabase.functions.invoke('scrape-recipe', {
         body: { url: urlInput.trim() },
       });
 
-      if (error) throw error;
+      if (error) {
+        const body = await response?.json().catch(() => null);
+        if (body?.error === 'BLOCKED') {
+          toast.error(body.message || 'This site blocks automated recipe imports. Copy the recipe text from the page and use the Paste Recipe option above instead.');
+          return;
+        }
+        throw error;
+      }
 
       if (data) {
         setFormData((prev) => ({

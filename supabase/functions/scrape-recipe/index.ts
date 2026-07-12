@@ -145,6 +145,16 @@ Deno.serve(async (req) => {
       }
 
       if (!response.ok) {
+        // Common statuses used by bot-detection/WAF challenges (Cloudflare, Akamai, etc.)
+        if ([403, 429, 503].includes(response.status)) {
+          return new Response(
+            JSON.stringify({
+              error: 'BLOCKED',
+              message: 'This site blocks automated recipe imports. Copy the recipe text from the page and use the Paste Recipe option above instead.',
+            }),
+            { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
         throw new Error(`Failed to fetch URL: ${response.status}`);
       }
 
@@ -163,8 +173,6 @@ Deno.serve(async (req) => {
 
       // Extract JSON-LD structured data (Schema.org Recipe)
       const recipe = parseRecipeFromHTML(html);
-
-      console.log('Parsed recipe:', recipe);
 
       return new Response(
         JSON.stringify(recipe),
@@ -197,20 +205,17 @@ function parseRecipeFromHTML(html: string): ScrapedRecipe {
   const jsonLdMatches = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi);
   
   if (jsonLdMatches) {
-    console.log(`Found ${jsonLdMatches.length} JSON-LD blocks`);
     for (const match of jsonLdMatches) {
       try {
         const jsonContent = match.replace(/<script[^>]*>|<\/script>/gi, '').trim();
         const data = JSON.parse(jsonContent);
-        
+
         // Handle @graph structure
         const recipes = findRecipeSchema(data);
-        console.log(`Found ${recipes.length} recipe schemas`);
-        
+
         if (recipes.length > 0) {
           const recipeData = recipes[0];
-          console.log('Recipe data keys:', Object.keys(recipeData));
-          
+
           recipe.title = recipeData.name || null;
           recipe.image = extractImage(recipeData.image);
           recipe.ingredients = extractIngredients(recipeData.recipeIngredient);
@@ -224,8 +229,7 @@ function parseRecipeFromHTML(html: string): ScrapedRecipe {
             break;
           }
         }
-      } catch (e) {
-        console.log('Failed to parse JSON-LD block:', e);
+      } catch {
         continue;
       }
     }
@@ -236,7 +240,6 @@ function parseRecipeFromHTML(html: string): ScrapedRecipe {
     const wprmIngredients = extractWPRMIngredients(html);
     if (wprmIngredients.length > 0) {
       recipe.ingredients = wprmIngredients;
-      console.log('Extracted ingredients from WPRM format');
     }
   }
 
@@ -244,7 +247,6 @@ function parseRecipeFromHTML(html: string): ScrapedRecipe {
     const wprmInstructions = extractWPRMInstructions(html);
     if (wprmInstructions.length > 0) {
       recipe.instructions = wprmInstructions;
-      console.log('Extracted instructions from WPRM format');
     }
   }
 
@@ -253,7 +255,6 @@ function parseRecipeFromHTML(html: string): ScrapedRecipe {
     const htmlIngredients = extractIngredientsFromHTML(html);
     if (htmlIngredients.length > 0) {
       recipe.ingredients = htmlIngredients;
-      console.log('Extracted ingredients from HTML');
     }
   }
 
@@ -261,7 +262,6 @@ function parseRecipeFromHTML(html: string): ScrapedRecipe {
     const htmlInstructions = extractInstructionsFromHTML(html);
     if (htmlInstructions.length > 0) {
       recipe.instructions = htmlInstructions;
-      console.log('Extracted instructions from HTML');
     }
   }
 
