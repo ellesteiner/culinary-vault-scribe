@@ -12,7 +12,7 @@ import { RecipeWithTags } from '@/types/recipe';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
-const Index = () => {
+export default function Index() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState<RecipeWithTags | null>(null);
   const [deleteRecipeId, setDeleteRecipeId] = useState<string | null>(null);
@@ -182,6 +182,4 @@ const Index = () => {
       />
     </div>
   );
-};
-
-export default Index;
+}

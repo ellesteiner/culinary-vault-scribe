@@ -22,7 +22,11 @@ function useIsAdmin() {
   });
 }
 
-export function AdminRoute({ children }: { children: ReactNode }) {
+interface AdminRouteProps {
+  children: ReactNode;
+}
+
+export function AdminRoute({ children }: AdminRouteProps) {
   const { user, isLoading: authLoading } = useAuth();
   const { data: isAdmin, isLoading: roleLoading } = useIsAdmin();
 

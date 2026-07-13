@@ -1,7 +1,7 @@
-import { createRoot } from "react-dom/client";
-import { AuthProvider } from "@/contexts/AuthContext";
-import App from "./App.tsx";
-import "./index.css";
+import { createRoot } from 'react-dom/client';
+import { AuthProvider } from '@/contexts/AuthContext';
+import App from './App.tsx';
+import './index.css';
 
 const isInIframe = (() => {
   try {
@@ -12,8 +12,8 @@ const isInIframe = (() => {
 })();
 
 const isPreviewHost =
-  window.location.hostname.includes("id-preview--") ||
-  window.location.hostname.includes("lovableproject.com");
+  window.location.hostname.includes('id-preview--') ||
+  window.location.hostname.includes('lovableproject.com');
 
 if (isPreviewHost || isInIframe) {
   navigator.serviceWorker?.getRegistrations().then((registrations) => {
@@ -21,7 +21,7 @@ if (isPreviewHost || isInIframe) {
   });
 }
 
-createRoot(document.getElementById("root")!).render(
+createRoot(document.getElementById('root')!).render(
   <AuthProvider>
     <App />
   </AuthProvider>
