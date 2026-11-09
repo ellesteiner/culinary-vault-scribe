@@ -1,8 +1,8 @@
 # Supabase → Neon migration
 
-Status as of this doc: **built, tested, not cut over.** All work is on branch
-`migration/neon`. `main` / production still runs on Supabase. Nothing has been
-merged, and Supabase has not been written to — only read via a local backup.
+Status as of this doc: **cut over, complete.** `migration/neon` was merged
+into `main` and deployed to production (`www.recipe-forge.com`). The
+Supabase project has been deleted and its env vars removed from Vercel.
 
 ## Why
 
@@ -137,17 +137,18 @@ covering both the bare default domain and every per-branch/per-deployment
 variant). Neon Auth's trusted-domain list is kept in sync with the same set
 via `neon neon-auth domain add/list/delete`.
 
-## Not done yet (cutover)
+## Cutover (done)
 
-- `main` has not been merged into; production (`www.recipe-forge.com`) still
-  runs on Supabase.
-- Vercel's **Production** environment still has only the old
-  `VITE_SUPABASE_*` vars. The new `VITE_NEON_AUTH_URL` / `VITE_API_BASE_URL`
-  are only set for the `migration/neon` branch's Preview environment so far.
-- Supabase project `qljhioestruhoppudmdh` has not been touched beyond the
-  read-only backup — no decommissioning, no env var changes there.
-- Once cutover happens: tag the current production commit first, confirm
-  the CORS/trusted-domain allowlist still matches Vercel's real domains,
-  merge, watch the deploy, verify live, *then* flip Supabase env vars and
-  decommission that project as a separate later step — don't do it in the
-  same pass as the merge.
+- Tagged pre-cutover `main` as `pre-neon-cutover` before merging, for
+  rollback reference.
+- Confirmed `www.recipe-forge.com` / `recipe-forge.com` were already covered
+  by both the CORS allowlist (`functions/api/cors.ts`) and Neon Auth's
+  trusted-domain list.
+- Merged `migration/neon` into `main`, pushed, and watched the resulting
+  Vercel production deploy go live. Verified the live site against the new
+  backend.
+- Removed the old `VITE_SUPABASE_*` vars from Vercel (all environments).
+- Deleted the Supabase project (`qljhioestruhoppudmdh`) entirely — the
+  one-time pre-migration backup at
+  `~/Backups/culinary-vault-scribe-supabase/` is now the only copy of the
+  old data.
