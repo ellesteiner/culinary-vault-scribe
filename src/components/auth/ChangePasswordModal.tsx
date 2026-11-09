@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
+import { authClient } from '@/integrations/neon/client';
 import { toast } from 'sonner';
 
 interface ChangePasswordModalProps {
@@ -12,11 +12,13 @@ interface ChangePasswordModalProps {
 }
 
 export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProps) {
+  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const resetForm = () => {
+    setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
     setLoading(false);
@@ -42,11 +44,11 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    const { error } = await authClient.changePassword({ currentPassword, newPassword });
     setLoading(false);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(error.message || 'Failed to update password');
       return;
     }
 
@@ -63,6 +65,17 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-sm font-medium text-foreground mb-2 block">Current Password</label>
+            <Input
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              placeholder="••••••••"
+              className="input-cookbook"
+              required
+            />
+          </div>
           <div>
             <label className="text-sm font-medium text-foreground mb-2 block">New Password</label>
             <Input

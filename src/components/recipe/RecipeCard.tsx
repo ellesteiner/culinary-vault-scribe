@@ -1,10 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Clock, Users, Edit2, Trash2, ExternalLink, User } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
 import { RecipeWithTags } from '@/types/recipe';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { LikeButton } from './LikeButton';
 
 interface RecipeCardProps {
@@ -26,20 +24,7 @@ const placeholderImages = [
 
 export function RecipeCard({ recipe, onEdit, onDelete, index, likeCount = 0, isLiked = false }: RecipeCardProps) {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { data: isAdmin } = useQuery({
-    queryKey: ['is-admin', user?.id],
-    enabled: !!user,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user!.id)
-        .eq('role', 'admin')
-        .maybeSingle();
-      return !!data;
-    },
-  });
+  const { user, isAdmin } = useAuth();
   const imageUrl = recipe.image_url || placeholderImages[index % placeholderImages.length];
   const isOwner = !!user && (recipe.user_id === user.id || isAdmin);
 

@@ -15,8 +15,6 @@ import { AuthModal } from '@/components/auth/AuthModal';
 import { ChangePasswordModal } from '@/components/auth/ChangePasswordModal';
 import { AISousChefModal } from './AISousChefModal';
 import { useShoppingList } from '@/hooks/useShoppingList';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 
 interface HeaderProps {
   onAddRecipe: () => void;
@@ -26,7 +24,7 @@ interface HeaderProps {
 }
 
 export function Header({ onAddRecipe, searchQuery, onSearchChange, recipeCount }: HeaderProps) {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, isAdmin, signOut } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [sousChefOpen, setSousChefOpen] = useState(false);
@@ -34,20 +32,6 @@ export function Header({ onAddRecipe, searchQuery, onSearchChange, recipeCount }
   const { items: shoppingItems } = useShoppingList();
   const activeShoppingCount = shoppingItems.filter((i) => !i.checked).length;
 
-  const { data: isAdmin } = useQuery({
-    queryKey: ['is-admin', user?.id],
-    enabled: !!user,
-    queryFn: async () => {
-      if (!user) return false;
-      const { data } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .eq('role', 'admin')
-        .maybeSingle();
-      return !!data;
-    },
-  });
   return (
     <>
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { apiFetch } from '@/integrations/neon/client';
 import { RecipeComment } from '@/types/comment';
 import { toast } from 'sonner';
 
@@ -8,15 +8,7 @@ export function useComments(recipeId: string | undefined) {
     queryKey: ['comments', recipeId],
     queryFn: async (): Promise<RecipeComment[]> => {
       if (!recipeId) return [];
-
-      const { data, error } = await supabase
-        .from('recipe_comments')
-        .select('*')
-        .eq('recipe_id', recipeId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      return data || [];
+      return apiFetch<RecipeComment[]>(`/recipes/${recipeId}/comments`);
     },
     enabled: !!recipeId,
   });
@@ -27,20 +19,10 @@ export function useCreateComment() {
 
   return useMutation({
     mutationFn: async ({ recipeId, content }: { recipeId: string; content: string }) => {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) throw new Error('Must be logged in to comment');
-      
-      const { data, error } = await supabase
-        .from('recipe_comments')
-        .insert({ recipe_id: recipeId, content, user_id: user.id })
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Comment insert error details:', error.message, error.code, error.details);
-        throw error;
-      }
-      return data;
+      return apiFetch(`/recipes/${recipeId}/comments`, {
+        method: 'POST',
+        body: JSON.stringify({ content }),
+      });
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['comments', variables.recipeId] });
@@ -57,13 +39,8 @@ export function useUpdateComment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, recipeId, content }: { id: string; recipeId: string; content: string }) => {
-      const { error } = await supabase
-        .from('recipe_comments')
-        .update({ content })
-        .eq('id', id);
-
-      if (error) throw error;
+    mutationFn: async ({ id, content }: { id: string; recipeId: string; content: string }) => {
+      await apiFetch(`/comments/${id}`, { method: 'PATCH', body: JSON.stringify({ content }) });
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['comments', variables.recipeId] });
@@ -80,13 +57,8 @@ export function useDeleteComment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, recipeId }: { id: string; recipeId: string }) => {
-      const { error } = await supabase
-        .from('recipe_comments')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
+    mutationFn: async ({ id }: { id: string; recipeId: string }) => {
+      await apiFetch(`/comments/${id}`, { method: 'DELETE' });
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['comments', variables.recipeId] });
