@@ -4,9 +4,12 @@ const ALLOWED_ORIGINS = [
   "https://recipe-forge.com",
 ];
 
-// Vercel preview deployments for this project, e.g.
-// culinary-vault-scribe-git-foo-ellesteiners-projects.vercel.app
-const VERCEL_PREVIEW = /^https:\/\/culinary-vault-scribe-[a-z0-9-]+\.vercel\.app$/;
+// Every Vercel domain for this project: the bare default domain, its
+// per-team-slug alias, and every per-branch/per-deployment preview, e.g.
+// culinary-vault-scribe.vercel.app
+// culinary-vault-scribe-ellesteiner-5252s-projects.vercel.app
+// culinary-vault-scribe-git-foo-ellesteiner-5252s-projects.vercel.app
+const VERCEL_PREVIEW = /^https:\/\/culinary-vault-scribe(-[a-z0-9-]+)?\.vercel\.app$/;
 
 export function isAllowedOrigin(origin: string | null): boolean {
   if (!origin) return false;
