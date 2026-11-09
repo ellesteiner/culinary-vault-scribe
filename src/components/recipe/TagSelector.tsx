@@ -5,7 +5,7 @@ import { Tag } from '@/types/recipe';
 import { useTags, useCreateTag } from '@/hooks/useRecipes';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
+import { apiFetch } from '@/integrations/neon/client';
 import { toast } from 'sonner';
 
 interface TagSelectorProps {
@@ -70,14 +70,14 @@ export function TagSelector({ selectedTagIds, onChange, suggestionContext }: Tag
     setSuggesting(true);
     setSuggestions([]);
     try {
-      const { data, error } = await supabase.functions.invoke('suggest-tags', {
-        body: {
+      const data = await apiFetch<any>('/ai/suggest-tags', {
+        method: 'POST',
+        body: JSON.stringify({
           title,
           ingredients: cleanIngredients,
           availableTags: tags.map((t) => t.name),
-        },
+        }),
       });
-      if (error) throw error;
       if (data?.error) throw new Error(data.error);
       const names: string[] = data?.tags ?? [];
       const matched = names

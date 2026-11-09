@@ -10,7 +10,7 @@ import { TagSelector } from './TagSelector';
 import { RecipeFormData, RecipeWithTags, defaultRecipeFormData } from '@/types/recipe';
 import { useCreateRecipe, useUpdateRecipe, useTags, useCreateTag } from '@/hooks/useRecipes';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { apiFetch, ApiError } from '@/integrations/neon/client';
 import { toast } from 'sonner';
 
 type ImportMode = 'url' | 'paste';
@@ -72,11 +72,10 @@ export function RecipeModal({ isOpen, onClose, recipe }: RecipeModalProps) {
 
     setIsParsing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('parse-recipe', {
-        body: { text },
+      const data = await apiFetch<any>('/ai/parse-recipe', {
+        method: 'POST',
+        body: JSON.stringify({ text }),
       });
-
-      if (error) throw error;
       if (!data || data.error) throw new Error(data?.error || 'Parse failed');
 
       // Resolve AI-suggested tag names to tag IDs, creating any that don't exist.
@@ -136,18 +135,16 @@ export function RecipeModal({ isOpen, onClose, recipe }: RecipeModalProps) {
 
     setIsScraping(true);
     try {
-      const { data, error, response } = await supabase.functions.invoke('scrape-recipe', {
-        body: { url: urlInput.trim() },
-      });
-
-      if (error) {
-        const body = await response?.json().catch(() => null);
-        if (body?.error === 'BLOCKED') {
-          toast.error(body.message || 'This site blocks automated recipe imports. Copy the recipe text from the page and use the Paste Recipe option above instead.');
-          return;
+      const data = await apiFetch<any>('/scrape-recipe', {
+        method: 'POST',
+        body: JSON.stringify({ url: urlInput.trim() }),
+      }).catch((err) => {
+        if (err instanceof ApiError && (err.body as any)?.error === 'BLOCKED') {
+          toast.error((err.body as any).message || 'This site blocks automated recipe imports. Copy the recipe text from the page and use the Paste Recipe option above instead.');
+          return null;
         }
-        throw error;
-      }
+        throw err;
+      });
 
       if (data) {
         setFormData((prev) => ({
@@ -189,7 +186,6 @@ export function RecipeModal({ isOpen, onClose, recipe }: RecipeModalProps) {
         }
         await createRecipe.mutateAsync({
           data: formData,
-          userId: user.id,
           ownerName: profile?.full_name || user.email || 'Unknown',
         });
       }

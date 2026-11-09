@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { authClient, apiFetch } from '@/integrations/neon/client';
 import { toast } from 'sonner';
 
 interface Profile {
@@ -10,10 +9,22 @@ interface Profile {
   full_name: string;
 }
 
+interface AuthUser {
+  id: string;
+  email: string;
+}
+
+interface WhoamiResponse {
+  userId: string;
+  email: string;
+  profile: Profile;
+  isAdmin: boolean;
+}
+
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
+  user: AuthUser | null;
   profile: Profile | null;
+  isAdmin: boolean;
   isLoading: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
@@ -23,87 +34,72 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const { data: session, isPending: sessionPending } = authClient.useSession();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
 
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-    setProfile(data as Profile | null);
-  };
+  const sessionUser = session?.user ?? null;
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          // Use setTimeout to avoid Supabase client deadlock
-          setTimeout(() => fetchProfile(session.user.id), 0);
-        } else {
-          setProfile(null);
-        }
-        setIsLoading(false);
-      }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
-      setIsLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    if (!sessionUser) {
+      setProfile(null);
+      setIsAdmin(false);
+      return;
+    }
+    setProfileLoading(true);
+    apiFetch<WhoamiResponse>('/whoami')
+      .then((data) => {
+        setProfile(data.profile);
+        setIsAdmin(data.isAdmin);
+      })
+      .catch((err) => {
+        console.error('Failed to load profile:', err);
+      })
+      .finally(() => setProfileLoading(false));
+  }, [sessionUser?.id]);
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    setIsLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-        data: { full_name: fullName },
-      },
-    });
-    setIsLoading(false);
+    const { error } = await authClient.signUp.email({ email, password, name: fullName });
     if (error) {
-      toast.error(error.message);
+      toast.error(error.message || 'Failed to create account');
       throw error;
     }
-    toast.success('Check your email to confirm your account!');
+    toast.success('Account created! Welcome to My Cookbook.');
   };
 
   const signIn = async (email: string, password: string) => {
-    setIsLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setIsLoading(false);
+    const { error } = await authClient.signIn.email({ email, password });
     if (error) {
-      toast.error(error.message);
+      toast.error(error.message || 'Failed to sign in');
       throw error;
     }
     toast.success('Welcome back!');
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
+    const { error } = await authClient.signOut();
     if (error) {
-      toast.error(error.message);
+      toast.error(error.message || 'Failed to sign out');
       throw error;
     }
     toast.success('Signed out');
   };
 
+  const user: AuthUser | null = sessionUser ? { id: sessionUser.id, email: sessionUser.email } : null;
+
   return (
-    <AuthContext.Provider value={{ user, session, profile, isLoading, signUp, signIn, signOut }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        profile,
+        isAdmin,
+        isLoading: sessionPending || profileLoading,
+        signUp,
+        signIn,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

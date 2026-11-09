@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { apiFetch } from '@/integrations/neon/client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -33,53 +33,24 @@ interface LocationGroup {
   lastLike: string;
 }
 
-function useIsAdmin() {
-  const { user } = useAuth();
-  return useQuery({
-    queryKey: ['is-admin', user?.id],
-    enabled: !!user,
-    queryFn: async () => {
-      if (!user) return false;
-      const { data } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .eq('role', 'admin')
-        .maybeSingle();
-      return !!data;
-    },
-  });
-}
-
 function useAdminLikes(timeFilter: string, recipeFilter: string, countryFilter: string) {
   return useQuery({
     queryKey: ['admin-likes', timeFilter, recipeFilter, countryFilter],
     queryFn: async () => {
-      let query = supabase
-        .from('recipe_likes')
-        .select('id, recipe_id, ip_address, location_data, created_at, recipes(title)')
-        .order('created_at', { ascending: false });
-
+      const params = new URLSearchParams();
       if (timeFilter !== 'all') {
         const now = new Date();
         const hours = timeFilter === '24h' ? 24 : timeFilter === '7d' ? 168 : 720;
-        const since = new Date(now.getTime() - hours * 3600000).toISOString();
-        query = query.gte('created_at', since);
+        params.set('since', new Date(now.getTime() - hours * 3600000).toISOString());
       }
+      if (recipeFilter !== 'all') params.set('recipe_id', recipeFilter);
 
-      if (recipeFilter !== 'all') {
-        query = query.eq('recipe_id', recipeFilter);
-      }
+      const data = await apiFetch<LikeRow[]>(`/admin/likes?${params.toString()}`);
 
-      const { data, error } = await query;
-      if (error) throw error;
-
-      let likes = (data || []) as unknown as LikeRow[];
-
+      let likes = data;
       if (countryFilter !== 'all') {
         likes = likes.filter(l => (l.location_data as any)?.country === countryFilter);
       }
-
       return likes;
     },
   });
@@ -89,20 +60,15 @@ function useRecipeList() {
   return useQuery({
     queryKey: ['recipe-list-admin'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('recipes')
-        .select('id, title')
-        .order('title');
-      if (error) throw error;
-      return data || [];
+      const data = await apiFetch<{ id: string; title: string }[]>('/recipes');
+      return [...data].sort((a, b) => a.title.localeCompare(b.title));
     },
   });
 }
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const { user, isLoading: authLoading } = useAuth();
-  const { data: isAdmin, isLoading: roleLoading } = useIsAdmin();
+  const { user, isAdmin, isLoading: authLoading } = useAuth();
   const { data: recipeList = [] } = useRecipeList();
 
   const [timeFilter, setTimeFilter] = useState('all');
@@ -164,7 +130,7 @@ export default function AdminDashboard() {
       .sort((a, b) => b.likes - a.likes);
   }, [locationGroups]);
 
-  if (authLoading || roleLoading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <p className="text-muted-foreground">Loading...</p>

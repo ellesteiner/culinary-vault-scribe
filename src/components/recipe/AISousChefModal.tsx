@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import { apiFetch } from '@/integrations/neon/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreateRecipe } from '@/hooks/useRecipes';
 import { toast } from 'sonner';
@@ -63,10 +63,10 @@ export function AISousChefModal({ open, onClose }: AISousChefModalProps) {
     setLoading(true);
     setRecipe(null);
     try {
-      const { data, error } = await supabase.functions.invoke('ai-sous-chef', {
-        body: { ingredients: ingredients.trim(), mood: mood.trim() },
+      const data = await apiFetch<any>('/ai/sous-chef', {
+        method: 'POST',
+        body: JSON.stringify({ ingredients: ingredients.trim(), mood: mood.trim() }),
       });
-      if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (!data?.recipe) throw new Error('No recipe returned');
       setRecipe(data.recipe as AIRecipe);
@@ -98,7 +98,6 @@ export function AISousChefModal({ open, onClose }: AISousChefModalProps) {
         servings: String(recipe.servings || ''),
         tagIds: [],
       },
-      userId: user.id,
       ownerName: profile?.full_name || user.email || 'Anonymous',
     });
     handleClose();
